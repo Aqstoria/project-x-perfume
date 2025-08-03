@@ -96,7 +96,7 @@ npx prisma db seed
 
 ```toml
 [build]
-  command = "pnpm build"
+  command = "npm run build"
   publish = ".next"
 
 [build.environment]

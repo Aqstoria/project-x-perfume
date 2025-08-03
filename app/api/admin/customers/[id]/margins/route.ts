@@ -121,7 +121,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json(
         {
           error: "Invalid margin data",
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 },
       );
@@ -202,7 +202,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json(
         {
           error: "Invalid margin data",
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 },
       );

@@ -39,7 +39,7 @@ export default function NewOrderPage() {
       router.push("/login/admin");
     } else if (
       status === "authenticated" &&
-      (session?.user as Record<string, unknown>)?.role !== "ADMIN"
+      session?.user?.role !== "ADMIN"
     ) {
       router.push("/login/admin");
     }
@@ -117,7 +117,7 @@ export default function NewOrderPage() {
             <h1 className="text-3xl font-bold text-gray-900">Nieuwe Order</h1>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                Welkom, {(session.user as { username?: string })?.username}
+                Welkom, {session.user?.username}
               </span>
             </div>
           </div>

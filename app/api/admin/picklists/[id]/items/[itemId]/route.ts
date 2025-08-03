@@ -12,8 +12,9 @@ const updatePickItemSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; itemId: string } }
+  { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
+  const { id, itemId } = await params;
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -26,7 +27,7 @@ export async function PATCH(
 
     // Get current picklist item
     const currentItem = await prisma.picklistItem.findUnique({
-      where: { id: params.itemId },
+      where: { id: itemId },
       include: {
         picklist: true,
         product: true,
@@ -38,7 +39,7 @@ export async function PATCH(
     }
 
     // Verify this item belongs to the specified picklist
-    if (currentItem.picklistId !== params.id) {
+    if (currentItem.picklistId !== id) {
       return NextResponse.json({ error: "Invalid picklist item" }, { status: 400 });
     }
 
@@ -77,7 +78,7 @@ export async function PATCH(
 
     // Update the picklist item
     const updatedItem = await prisma.picklistItem.update({
-      where: { id: params.itemId },
+      where: { id: itemId },
       data: updateData,
       include: {
         product: {
@@ -96,7 +97,7 @@ export async function PATCH(
 
     // Check if all items in the picklist are completed
     const allItems = await prisma.picklistItem.findMany({
-      where: { picklistId: params.id },
+      where: { picklistId: id },
     });
 
     const allCompleted = allItems.every((item) => item.status === "PICKED");
@@ -104,24 +105,24 @@ export async function PATCH(
       item.status === "PICKED" || item.status === "PARTIALLY_PICKED"
     );
 
-    // Update picklist status if needed
-    if (allCompleted) {
-      await prisma.picklist.update({
-        where: { id: params.id },
-        data: { 
-          status: "COMPLETED",
-          completedAt: new Date(),
-        },
-      });
-    } else if (anyInProgress && currentItem.picklist.status === "PENDING") {
-      await prisma.picklist.update({
-        where: { id: params.id },
-        data: { 
-          status: "IN_PROGRESS",
-          startedAt: new Date(),
-        },
-      });
-    }
+         // Update picklist status if needed
+     if (allCompleted) {
+       await prisma.picklist.update({
+         where: { id: id },
+         data: { 
+           status: "COMPLETED",
+           completedAt: new Date(),
+         },
+       });
+     } else if (anyInProgress && currentItem.picklist.status === "PENDING") {
+       await prisma.picklist.update({
+         where: { id: id },
+         data: { 
+           status: "IN_PROGRESS",
+           startedAt: new Date(),
+         },
+       });
+     }
 
     return NextResponse.json(updatedItem);
   } catch (error) {
@@ -142,8 +143,9 @@ export async function PATCH(
 // Barcode scanning endpoint
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; itemId: string } }
+  { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
+  const { id, itemId } = await params;
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -169,7 +171,7 @@ export async function POST(
 
     // Get current picklist item
     const currentItem = await prisma.picklistItem.findUnique({
-      where: { id: params.itemId },
+      where: { id: itemId },
       include: {
         product: true,
       },
@@ -190,7 +192,7 @@ export async function POST(
 
     // Auto-complete the item
     const updatedItem = await prisma.picklistItem.update({
-      where: { id: params.itemId },
+      where: { id: itemId },
       data: {
         picked: currentItem.quantity,
         status: "PICKED",

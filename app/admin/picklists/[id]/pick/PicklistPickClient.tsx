@@ -9,9 +9,7 @@ import {
   ArrowLeft,
   Scan,
   CheckSquare,
-  Square,
-  Play,
-  Pause
+  Square
 } from "lucide-react";
 
 interface PicklistItem {
@@ -57,15 +55,10 @@ interface Picklist {
 }
 
 interface PicklistPickClientProps {
-  session: {
-    user?: {
-      username?: string;
-    };
-  };
   picklistId: string;
 }
 
-export default function PicklistPickClient({ session, picklistId }: PicklistPickClientProps) {
+export default function PicklistPickClient({ picklistId }: PicklistPickClientProps) {
   const router = useRouter();
   const [picklist, setPicklist] = useState<Picklist | null>(null);
   const [loading, setLoading] = useState(true);

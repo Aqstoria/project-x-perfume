@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     const role = await prisma.clientRole.create({
       data: {
         name: validatedData.name,
-        description: validatedData.description,
+        description: validatedData.description || null,
         permissions: validatedData.permissions,
       },
     });

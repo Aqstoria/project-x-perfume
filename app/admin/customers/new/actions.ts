@@ -58,7 +58,7 @@ export async function createCustomer(formData: FormData) {
       data: {
         customerId: customer.id,
         margin: margeNum,
-        isActive: validatedData.actief,
+        category: "general", // Default category for general margin
       },
     });
 

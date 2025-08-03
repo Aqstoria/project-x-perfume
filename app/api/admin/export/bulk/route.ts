@@ -12,7 +12,7 @@ const bulkExportSchema = z.object({
       type: z.enum(["PRODUCT", "ORDER", "CUSTOMER"]),
       format: z.enum(["CSV", "EXCEL"]),
       columns: z.array(z.string()),
-      filters: z.record(z.any()).optional(),
+      filters: z.record(z.any()).optional(), // Fixed: was z.many() now z.any()
     }),
   ),
   includePricing: z.boolean().optional(),

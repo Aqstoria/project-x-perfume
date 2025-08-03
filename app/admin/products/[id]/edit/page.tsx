@@ -84,7 +84,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     const loadProduct = async () => {
       try {
-        const response = await fetch(`/api/admin/products/${params.id}`);
+        const { id: productId } = await params;
+        const response = await fetch(`/api/admin/products/${productId}`);
         if (!response.ok) {
           throw new Error("Failed to fetch product");
         }

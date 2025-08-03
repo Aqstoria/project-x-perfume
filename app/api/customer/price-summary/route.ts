@@ -10,18 +10,14 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const customerId = session.user.id;
+    const customerId = session.user.customerId;
 
     // Get customer with pricing configuration
     const customer = await prisma.customer.findUnique({
       where: { id: customerId },
       include: {
-        categoryPricing: {
-          include: {
-            category: true,
-          },
-        },
-        productPricing: {
+        customerMargins: true,
+        customerPrices: {
           include: {
             product: {
               select: {
@@ -33,6 +29,8 @@ export async function GET() {
             },
           },
         },
+        customerDiscounts: true,
+        hiddenCategories: true,
       },
     });
 
@@ -67,7 +65,7 @@ export async function GET() {
 
     // Calculate pricing statistics
     const pricingStats = {
-      generalMargin: customer.marginPercentage,
+      generalMargin: customer.generalMargin,
       totalOrders: recentOrders.length,
       averageOrderValue:
         recentOrders.length > 0
@@ -79,27 +77,26 @@ export async function GET() {
               return sum + orderTotal;
             }, 0) / recentOrders.length
           : 0,
-      categoryOverrides: customer.categoryPricing.length,
-      productOverrides: customer.productPricing.length,
+      categoryOverrides: customer.customerMargins.length,
+      productOverrides: customer.customerPrices.length,
     };
 
     // Get category pricing summary
-    const categoryPricing = customer.categoryPricing.map((cp) => ({
-      categoryId: cp.categoryId,
-      categoryName: cp.category.name,
-      marginPercentage: cp.marginPercentage,
-      isOverride: cp.marginPercentage !== customer.marginPercentage,
+    const categoryPricing = customer.customerMargins.map((cm) => ({
+      category: cm.category,
+      marginPercentage: cm.margin,
+      isOverride: cm.margin !== customer.generalMargin,
     }));
 
     // Get product pricing summary (limited to 10 most recent)
-    const productPricing = customer.productPricing.slice(0, 10).map((pp) => ({
-      productId: pp.productId,
-      productName: pp.product.name,
-      productBrand: pp.product.brand,
-      retailPrice: pp.product.retailPrice,
-      customerPrice: pp.price,
-      discount: pp.product.retailPrice - pp.price,
-      discountPercentage: ((pp.product.retailPrice - pp.price) / pp.product.retailPrice) * 100,
+    const productPricing = customer.customerPrices.slice(0, 10).map((cp) => ({
+      productId: cp.productId,
+      productName: cp.product.name,
+      productBrand: cp.product.brand,
+      retailPrice: cp.product.retailPrice,
+      customerPrice: cp.price,
+      discount: Number(cp.product.retailPrice) - Number(cp.price),
+      discountPercentage: ((Number(cp.product.retailPrice) - Number(cp.price)) / Number(cp.product.retailPrice)) * 100,
     }));
 
     return NextResponse.json({
@@ -107,8 +104,8 @@ export async function GET() {
         id: customer.id,
         name: customer.name,
         email: customer.email,
-        marginPercentage: customer.marginPercentage,
-        hiddenCategories: customer.hiddenCategories,
+        marginPercentage: customer.generalMargin,
+        hiddenCategories: customer.hiddenCategories.map(hc => hc.category),
       },
       pricingStats,
       categoryPricing,

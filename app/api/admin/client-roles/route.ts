@@ -10,7 +10,7 @@ const clientRoleSchema = z.object({
   permissions: z.array(z.string()),
 });
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Check authentication and admin role
     const session = await auth();

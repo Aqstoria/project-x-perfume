@@ -30,9 +30,7 @@ const productSchema = z.object({
     .regex(/^\d+$/, "Voorraad moet een geheel getal zijn"),
   categorie: z.string().min(1, "Categorie is verplicht"),
   subcategorie: z.string().min(1, "Subcategorie is verplicht"),
-  status: z.enum(["CONCEPT", "ACTIEF", "NIET_BESCHIKBAAR", "VERVALLEN"], {
-    required_error: "Status is verplicht",
-  }),
+  status: z.enum(["CONCEPT", "ACTIEF", "NIET_BESCHIKBAAR", "VERVALLEN"]),
 });
 
 export type ProductFormData = z.infer<typeof productSchema>;

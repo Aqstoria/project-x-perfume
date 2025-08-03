@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     // Process each row
     for (let i = 0; i < records.length; i++) {
-      const row = records[i];
+      const row = records[i] as Record<string, unknown>;
       const rowNumber = i + 2; // +2 because of 0-based index and header row
 
       try {

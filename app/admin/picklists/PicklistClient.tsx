@@ -49,10 +49,6 @@ interface Picklist {
   }>;
 }
 
-interface PicklistClientProps {
-  // session parameter removed as it's not used
-}
-
 export default function PicklistClient() {
   const router = useRouter();
   const [picklists, setPicklists] = useState<Picklist[]>([]);

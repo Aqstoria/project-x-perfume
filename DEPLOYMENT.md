@@ -17,7 +17,7 @@
 2. Click "New site from Git"
 3. Connect your GitHub repository
 4. Configure build settings:
-   - **Build command**: `pnpm build`
+   - **Build command**: `npm run build`
    - **Publish directory**: `.next`
    - **Node version**: `18` (or higher)
 
@@ -75,13 +75,13 @@ NPM_FLAGS="--legacy-peer-deps"
 
 ```bash
 # Connect to production database
-pnpm prisma migrate deploy
+npx prisma migrate deploy
 
 # Generate Prisma client
-pnpm prisma generate
+npx prisma generate
 
 # Seed initial data (if needed)
-pnpm prisma db seed
+npx prisma db seed
 ```
 
 #### Database Backup Strategy

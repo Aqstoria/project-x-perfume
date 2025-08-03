@@ -17,8 +17,9 @@ const updatePickItemSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -27,7 +28,7 @@ export async function GET(
     }
 
     const picklist = await prisma.picklist.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         order: {
           include: {
@@ -76,8 +77,9 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -102,7 +104,7 @@ export async function PATCH(
     }
 
     const picklist = await prisma.picklist.update({
-      where: { id: params.id },
+      where: { id: id },
       data: updateData,
       include: {
         order: {
@@ -152,8 +154,9 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -162,7 +165,7 @@ export async function DELETE(
     }
 
     await prisma.picklist.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     return NextResponse.json({ message: "Picklist deleted successfully" });

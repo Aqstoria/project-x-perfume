@@ -9,5 +9,5 @@ export default async function PicklistsPage() {
     redirect("/login/admin");
   }
 
-  return <PicklistClient session={session} />;
+  return <PicklistClient />;
 } 

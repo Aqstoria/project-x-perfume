@@ -5,13 +5,14 @@ import PicklistDetailClient from "./PicklistDetailClient";
 export default async function PicklistDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const session = await auth();
+  const { id } = await params;
 
   if (!session || (session.user as { role?: string })?.role !== "ADMIN") {
     redirect("/login/admin");
   }
 
-  return <PicklistDetailClient session={session} picklistId={params.id} />;
+  return <PicklistDetailClient session={session} picklistId={id} />;
 } 

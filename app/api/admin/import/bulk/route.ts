@@ -128,8 +128,8 @@ async function processProductRow(
         success: false,
         error: {
           row: rowIndex + 1,
-          field: error.errors[0]?.path?.join?.(".") ?? "unknown",
-          message: error.errors[0]?.message ?? "Ongeldige data",
+          field: error.issues[0]?.path?.join?.(".") ?? "unknown",
+          message: error.issues[0]?.message ?? "Ongeldige data",
           data: (row as Record<string, unknown>) || {},
         },
       };
@@ -180,14 +180,13 @@ async function processBatch(
           warnings.push(result.value.warning);
         }
       }
-    } else if (result.status === "rejected") {
+    } else {
       failed++;
-      const batchItem = index < batch.length ? batch[index] : {};
       errors.push({
         row: startIndex + index + 1,
         field: "unknown",
-        message: result.reason?.message || "Onbekende fout",
-        data: batchItem || {},
+        message: "Onbekende fout tijdens verwerking",
+        data: {},
       });
     }
   });
@@ -197,69 +196,86 @@ async function processBatch(
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
+    // Check admin authentication
     const session = await auth();
-    if (!session || (session.user as { role?: string })?.role !== "ADMIN") {
+    if (!session?.user || session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { data, columnMapping } = importRequestSchema.parse(body);
+    const formData = await request.formData();
+    const file = formData.get("file") as File;
+    const columnMapping = JSON.parse(formData.get("columnMapping") as string);
+
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+
+    // Parse the file
+    const data = await parseFile(file);
+    if (!data || data.length === 0) {
+      return NextResponse.json({ error: "No data found in file" }, { status: 400 });
+    }
 
     const startTime = Date.now();
+
+    // Process data in batches
     const batchSize = 50;
+    const batches = [];
+    for (let i = 0; i < data.length; i += batchSize) {
+      batches.push(data.slice(i, i + batchSize));
+    }
+
     let totalSuccessful = 0;
     let totalFailed = 0;
     const allErrors: ImportError[] = [];
     const allWarnings: ImportWarning[] = [];
 
-    // Process data in batches
-    for (let i = 0; i < data.length; i += batchSize) {
-      const batch = data.slice(i, i + batchSize);
-      const batchResult = await processBatch(batch, columnMapping, i);
-      totalSuccessful += batchResult.successful;
-      totalFailed += batchResult.failed;
-      allErrors.push(...batchResult.errors);
-      allWarnings.push(...batchResult.warnings);
+    for (let i = 0; i < batches.length; i++) {
+      const batch = batches[i];
+      const startIndex = i * batchSize;
+      const result = await processBatch(batch, columnMapping, startIndex);
+
+      totalSuccessful += result.successful;
+      totalFailed += result.failed;
+      allErrors.push(...result.errors);
+      allWarnings.push(...result.warnings);
     }
 
     const processingTime = Date.now() - startTime;
 
-    // Create import history record
-    const importHistory = await prisma.importHistory.create({
+    // Create import record
+    const importRecord = await prisma.importHistory.create({
       data: {
-        fileName: "bulk-import.csv",
-        fileType: "CSV",
-        entityType: "PRODUCT",
+        userId: session.user.id,
+        fileName: file.name,
         totalRows: data.length,
-        importedRows: totalSuccessful,
+        successfulRows: totalSuccessful,
         failedRows: totalFailed,
-        errors: allErrors as unknown as Prisma.InputJsonValue,
-        // processingTime,
-        importedBy: (session.user as { id: string })?.id || "",
+        processingTime,
+        status: totalFailed === 0 ? "SUCCESS" : totalSuccessful === 0 ? "FAILED" : "PARTIAL",
+        errors: allErrors.length > 0 ? JSON.stringify(allErrors) : null,
+        warnings: allWarnings.length > 0 ? JSON.stringify(allWarnings) : null,
       },
     });
 
-    const result: ImportResult = {
-      success: totalFailed === 0,
+    return NextResponse.json({
+      success: true,
       totalRows: data.length,
       successfulRows: totalSuccessful,
       failedRows: totalFailed,
       errors: allErrors,
       warnings: allWarnings,
       processingTime,
-      importId: importHistory.id, // Add importId to response
-    };
-
-    return NextResponse.json(result);
+      importId: importRecord.id,
+    });
   } catch (error) {
-    console.error("Bulk import error:", error);
+    console.error("Error processing bulk import:", error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
-          error: "Ongeldige data",
-          details: error.errors,
+          error: "Invalid import data",
+          details: error.issues,
         },
         { status: 400 },
       );
@@ -267,7 +283,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: "Interne server fout",
+        error: "Failed to process import",
       },
       { status: 500 },
     );

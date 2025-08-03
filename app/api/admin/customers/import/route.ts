@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
         if (error instanceof z.ZodError) {
           results.errors.push({
             row: rowNumber,
-            error: error.errors[0]?.message || "Validatie fout",
+            error: error.issues[0]?.message || "Validatie fout",
             data: row,
           });
         } else {

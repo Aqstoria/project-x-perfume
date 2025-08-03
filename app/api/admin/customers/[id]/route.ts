@@ -193,7 +193,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json(
         {
           error: "Invalid customer data",
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 },
       );

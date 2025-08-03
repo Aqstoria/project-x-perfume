@@ -129,8 +129,8 @@ export async function PATCH(
     console.error("Error updating picklist item:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid data", details: error.errors },
-        { status: 400 }
+        { error: "Invalid data", details: error.issues },
+        { status: 400 },
       );
     }
     return NextResponse.json(

@@ -40,39 +40,41 @@ export async function POST(request: NextRequest) {
         location: validatedData.location || null,
         notes: validatedData.notes || null,
       },
-      include: {
-        product: {
-          select: {
-            id: true,
-            name: true,
-            brand: true,
-            ean: true,
-            barcode: true,
-            location: true,
-            stockQuantity: true,
-          },
-        },
-        scanner: {
-          select: {
-            id: true,
-            username: true,
-          },
+    });
+
+    // Log the action
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "CREATE",
+        entity: "InventoryScan",
+        entityId: scan.id,
+        details: {
+          location: validatedData.location,
+          notes: validatedData.notes,
         },
       },
     });
 
-    return NextResponse.json(scan, { status: 201 });
+    return NextResponse.json({
+      success: true,
+      scan,
+    });
   } catch (error) {
     console.error("Error creating inventory scan:", error);
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid data", details: error.errors },
-        { status: 400 }
+        { error: "Invalid data", details: error.issues },
+        { status: 400 },
       );
     }
+
     return NextResponse.json(
-      { error: "Failed to create inventory scan" },
-      { status: 500 }
+      {
+        error: "Failed to create inventory scan",
+      },
+      { status: 500 },
     );
   }
 }

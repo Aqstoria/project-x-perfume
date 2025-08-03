@@ -177,8 +177,8 @@ async function processProductRow(
         success: false,
         error: {
           row: rowIndex + 1,
-          field: error.errors[0].path.join("."),
-          message: error.errors[0].message,
+          field: error.issues[0].path.join("."),
+          message: error.issues[0].message,
           data: row,
         },
       };

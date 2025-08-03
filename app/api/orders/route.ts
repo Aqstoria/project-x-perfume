@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Invalid order data",
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 },
       );

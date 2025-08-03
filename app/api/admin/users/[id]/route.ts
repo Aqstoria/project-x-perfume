@@ -74,7 +74,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid user data", details: error.errors },
+        { error: "Invalid user data", details: error.issues },
         { status: 400 },
       );
     }

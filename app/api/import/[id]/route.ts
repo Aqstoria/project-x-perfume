@@ -86,7 +86,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid import ID", details: error.errors },
+        { error: "Invalid import ID", details: error.issues },
         { status: 400 },
       );
     }

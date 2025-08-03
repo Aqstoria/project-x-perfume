@@ -9,7 +9,6 @@ import {
   XCircle,
   Play,
   Eye,
-  Plus,
   Search,
   Filter
 } from "lucide-react";

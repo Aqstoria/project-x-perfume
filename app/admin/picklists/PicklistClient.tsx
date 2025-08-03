@@ -9,8 +9,7 @@ import {
   XCircle,
   Play,
   Eye,
-  Search,
-  Filter
+  Search
 } from "lucide-react";
 
 interface Picklist {

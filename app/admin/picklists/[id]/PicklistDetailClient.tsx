@@ -57,15 +57,10 @@ interface Picklist {
 }
 
 interface PicklistDetailClientProps {
-  session: {
-    user?: {
-      username?: string;
-    };
-  };
   picklistId: string;
 }
 
-export default function PicklistDetailClient({ session, picklistId }: PicklistDetailClientProps) {
+export default function PicklistDetailClient({ picklistId }: PicklistDetailClientProps) {
   const router = useRouter();
   const [picklist, setPicklist] = useState<Picklist | null>(null);
   const [loading, setLoading] = useState(true);

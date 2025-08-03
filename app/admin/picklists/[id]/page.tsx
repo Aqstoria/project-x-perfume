@@ -14,5 +14,5 @@ export default async function PicklistDetailPage({
     redirect("/login/admin");
   }
 
-  return <PicklistDetailClient session={session} picklistId={id} />;
+  return <PicklistDetailClient picklistId={id} />;
 } 

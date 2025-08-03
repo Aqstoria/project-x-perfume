@@ -44,24 +44,6 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>;
 
-// Mock product data (in real app, this would come from API)
-const mockProduct = {
-  id: "1",
-  merk: "Chanel",
-  naam: "N°5 Eau de Parfum",
-  inhoud: "100ml",
-  ean: "1234567890123",
-  inkoopprijs: "25.50",
-  verkoopprijs: "45.00",
-  voorraad: "150",
-  maxBestelbaar: "50",
-  sterren: "5",
-  categorie: "Dames",
-  subcategorie: "Eau de Parfum",
-  beschrijving: "Een tijdloze klassieker met een verfijnde bloemige geur",
-  actief: true,
-};
-
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   // Unpack params at the top of the component
   const { id } = use(params);

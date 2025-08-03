@@ -92,7 +92,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       router.push("/login/admin");
     } else if (
       status === "authenticated" &&
-      (session?.user as Record<string, unknown>)?.role !== "ADMIN"
+      session?.user?.role !== "ADMIN"
     ) {
       router.push("/login/admin");
     }

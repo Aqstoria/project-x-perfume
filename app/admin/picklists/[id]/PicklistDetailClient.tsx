@@ -4,13 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Package, 
-  ShoppingCart, 
-  Users, 
   Clock, 
   CheckCircle, 
   XCircle,
   Play,
-  Eye,
   ArrowLeft,
   Scan,
   CheckSquare,

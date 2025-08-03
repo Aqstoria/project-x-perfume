@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
         productId: validatedData.productId,
         scannedBy: session.user.id,
         quantity: validatedData.quantity,
-        location: validatedData.location,
-        notes: validatedData.notes,
+        location: validatedData.location || null,
+        notes: validatedData.notes || null,
       },
       include: {
         product: {

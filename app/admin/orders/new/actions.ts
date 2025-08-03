@@ -59,7 +59,7 @@ export async function createOrder(formData: FormData) {
         userId: customer.id, // Using customer ID as user ID for now
         status: validatedData.status as any,
         totalAmount: bedragNum,
-        notes: validatedData.opmerkingen,
+        notes: validatedData.opmerkingen || null,
       },
     });
 

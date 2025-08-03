@@ -53,7 +53,7 @@ export default function NewOrderPage() {
     );
   }
 
-  if (!session || (session.user as Record<string, unknown>)?.role !== "ADMIN") {
+  if (!session || session.user?.role !== "ADMIN") {
     return null;
   }
 

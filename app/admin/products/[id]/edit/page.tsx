@@ -144,7 +144,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     );
   }
 
-  if (!session || (session.user as Record<string, unknown>)?.role !== "ADMIN") {
+  if (!session || session.user?.role !== "ADMIN") {
     return null;
   }
 

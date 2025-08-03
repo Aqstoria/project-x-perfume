@@ -9,7 +9,7 @@ import { MobileNavigation } from "@/components/ui/MobileNavigation";
 export default async function MobileAdminPage() {
   const session = await auth();
 
-  if (!session || (session.user as Record<string, unknown>)?.role !== "ADMIN") {
+  if (!session || session.user?.role !== "ADMIN") {
     redirect("/login/admin");
   }
 

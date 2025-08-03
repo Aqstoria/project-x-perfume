@@ -8,7 +8,6 @@ import {
   CheckCircle, 
   XCircle,
   Play,
-  Pause,
   Eye,
   Plus,
   Search,

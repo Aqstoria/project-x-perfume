@@ -118,7 +118,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json(
         {
           error: "Invalid hidden category data",
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 },
       );

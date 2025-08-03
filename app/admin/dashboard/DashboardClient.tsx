@@ -10,7 +10,6 @@ import { Prisma } from "@prisma/client";
 import { 
   Upload, 
   Download, 
-  Image, 
   Users, 
   Package, 
   ShoppingCart, 

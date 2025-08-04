@@ -10,6 +10,7 @@
     "lint": "next lint",
     "lint:strict": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings 0",
     "type-check": "tsc --noEmit",
+    "vercel-build": "prisma generate && prisma db push && next build",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",

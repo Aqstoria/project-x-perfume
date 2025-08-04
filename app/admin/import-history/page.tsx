@@ -63,7 +63,7 @@ export default function ImportHistoryPage() {
       router.push("/login/admin");
     } else if (
       status === "authenticated" &&
-      session?.user?.role !== "ADMIN"
+      (session?.user as any)?.role !== "ADMIN"
     ) {
       router.push("/login/admin");
     }
@@ -156,7 +156,7 @@ export default function ImportHistoryPage() {
     );
   }
 
-  if (!session || session.user?.role !== "ADMIN") {
+  if (!session || (session.user as any)?.role !== "ADMIN") {
     return null;
   }
 

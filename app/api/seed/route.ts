@@ -107,3 +107,16 @@ export async function GET() {
     await prisma.$disconnect();
   }
 }
+
+
+// Add this at the top of the file after imports
+async function testDatabaseConnection() {
+  try {
+    const result = await prisma.$queryRaw`SELECT 1 as test`;
+    console.log(" Database connection test successful:", result);
+    return true;
+  } catch (error) {
+    console.error(" Database connection test failed:", error);
+    return false;
+  }
+}

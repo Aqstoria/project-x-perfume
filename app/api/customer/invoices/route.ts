@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth();
 
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     }
 
     const customerId = session.user.customerId;
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(_request.url);
     const status = searchParams.get("status");
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");

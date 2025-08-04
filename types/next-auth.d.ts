@@ -20,6 +20,16 @@ declare module "next-auth" {
   }
 }
 
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    username: string;
+    role: string;
+    customerId?: string;
+    markup?: number;
+  }
+}
+
 // Utility types for safe Prisma type handling
 export type SafeDecimal = number | string;
 export type SafeJson = Record<string, unknown>;
@@ -42,13 +52,4 @@ export function toSafeJson(value: unknown): Record<string, unknown> {
     return value as Record<string, unknown>;
   }
   return {};
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    id: string;
-    username: string;
-    role: string;
-    markup?: number;
-  }
 }

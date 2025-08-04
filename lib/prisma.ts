@@ -29,3 +29,10 @@ if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL is required in production");
   }
 }
+
+// Graceful shutdown (only in Node.js environment)
+if (typeof process !== "undefined" && process.env.NODE_ENV !== "production") {
+  process.on("beforeExit", async () => {
+    await prisma.$disconnect();
+  });
+}

@@ -7,14 +7,14 @@ import { z } from "zod";
 const rejectSchema = z.object({ reason: z.string().min(3).max(255) });
 
 // POST /api/admin/reviews/[id]/reject
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   await requireAdmin();
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const body = await request.json();
+      const body = await _request.json();
   let parsed;
   try {
     parsed = rejectSchema.parse(body);

@@ -11,7 +11,9 @@ export async function GET() {
     }
 
     const customerId = session.user.customerId;
-
+    if (!customerId) {
+      return NextResponse.json({ error: "Customer ID not found in session" }, { status: 400 });
+    }
     // Get customer with pricing configuration
     const customer = await prisma.customer.findUnique({
       where: { id: customerId },

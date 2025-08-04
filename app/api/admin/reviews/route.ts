@@ -3,9 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/middleware-utils";
 
 // GET /api/admin/reviews?status=&rating=&productId=&customerId=&search=
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   await requireAdmin();
-  const { searchParams } = new URL(request.url);
+  const { searchParams } = new URL(_request.url);
   const status = searchParams.get("status");
   const rating = searchParams.get("rating");
   const productId = searchParams.get("productId");

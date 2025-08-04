@@ -7,12 +7,12 @@ import {
   resolveSecurityAlert,
 } from "@/lib/security-monitoring";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Check if user is authenticated and is admin
     await requireAdmin();
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(_request.url);
     const action = searchParams.get("action");
 
     switch (action) {
@@ -46,12 +46,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Check if user is authenticated and is admin
     await requireAdmin();
 
-    const body = await request.json();
+    const body = await _request.json();
     const { action, alertId, resolvedBy } = body;
 
     switch (action) {

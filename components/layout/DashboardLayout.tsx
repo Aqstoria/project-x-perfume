@@ -5,16 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
-  Menu,
-  X,
   Home,
   Package,
-  ShoppingCart,
   Users,
-  Settings,
+  ShoppingCart,
   BarChart3,
-  FileText,
+  Settings,
   LogOut,
+  Menu,
+  X,
   User,
   Bell,
 } from "lucide-react";

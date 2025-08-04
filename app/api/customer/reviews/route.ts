@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth();
 
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     }
 
     const customerId = session.user.id;
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(_request.url);
     const status = searchParams.get("status");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
@@ -35,7 +35,6 @@ export async function GET(request: NextRequest) {
             id: true,
             name: true,
             brand: true,
-            imageUrl: true,
           },
         },
       },
@@ -67,7 +66,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT(_request: NextRequest) {
   try {
     const session = await auth();
 
@@ -76,7 +75,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const customerId = session.user.id;
-    const { reviewId, title, content, rating } = await request.json();
+    const { reviewId, title, rating } = await _request.json();
 
     // Verify the review belongs to this customer and is still pending
     const existingReview = await prisma.review.findFirst({
@@ -96,7 +95,6 @@ export async function PUT(request: NextRequest) {
       where: { id: reviewId },
       data: {
         title,
-        content,
         rating,
         updatedAt: new Date(),
       },
@@ -118,7 +116,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(_request: NextRequest) {
   try {
     const session = await auth();
 
@@ -127,7 +125,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const customerId = session.user.id;
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(_request.url);
     const reviewId = searchParams.get("id");
 
     if (!reviewId) {

@@ -12,13 +12,13 @@ const bulkExportSchema = z.object({
       type: z.enum(["PRODUCT", "ORDER", "CUSTOMER"]),
       format: z.enum(["CSV", "EXCEL"]),
       columns: z.array(z.string()),
-      filters: z.record(z.string(), z.any()).optional(),
+      filters: z.record(z.any()).optional(), // Fixed: was z.many() now z.any()
     }),
   ),
   includePricing: z.boolean().optional(),
 });
 
-export async function POST(_request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -26,7 +26,7 @@ export async function POST(_request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await _request.json();
+    const body = await request.json();
     const validatedData = bulkExportSchema.parse(body);
 
     const results = [];

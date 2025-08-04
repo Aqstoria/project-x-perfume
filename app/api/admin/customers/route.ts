@@ -15,7 +15,7 @@ const createCustomerSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Check admin authentication
     const session = await auth();
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(_request.url);
     const search = searchParams.get("search");
     const status = searchParams.get("status");
     const page = parseInt(searchParams.get("page") || "1");
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Check admin authentication
     const session = await auth();
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await _request.json();
     const customerData = createCustomerSchema.parse(body);
 
     // Check if email already exists

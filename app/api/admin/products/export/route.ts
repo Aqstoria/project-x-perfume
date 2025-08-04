@@ -26,11 +26,11 @@ export interface ExportOptions {
   includePricing?: boolean;
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     await requireAdmin();
 
-    const body = await request.json();
+    const body = await _request.json();
     const { format, columns, filters, includePricing = false }: ExportOptions = body;
 
     // Build where clause based on filters
@@ -57,15 +57,17 @@ export async function POST(request: NextRequest) {
     }
 
     if (filters.minRating || filters.maxRating) {
-      (where as Record<string, unknown>).starRating = {};
-      if (filters.minRating) (where as Record<string, unknown>).starRating.gte = filters.minRating;
-      if (filters.maxRating) (where as Record<string, unknown>).starRating.lte = filters.maxRating;
+      const starRating: any = {};
+      if (filters.minRating) starRating.gte = filters.minRating;
+      if (filters.maxRating) starRating.lte = filters.maxRating;
+      (where as any).starRating = starRating;
     }
 
     if (filters.minPrice || filters.maxPrice) {
-      (where as Record<string, unknown>).retailPrice = {};
-      if (filters.minPrice) (where as Record<string, unknown>).retailPrice.gte = filters.minPrice;
-      if (filters.maxPrice) (where as Record<string, unknown>).retailPrice.lte = filters.maxPrice;
+      const retailPrice: any = {};
+      if (filters.minPrice) retailPrice.gte = filters.minPrice;
+      if (filters.maxPrice) retailPrice.lte = filters.maxPrice;
+      (where as any).retailPrice = retailPrice;
     }
 
     if (filters.search) {
@@ -225,7 +227,7 @@ export async function POST(request: NextRequest) {
               columns,
               filters,
               includePricing,
-            } as unknown as Record<string, unknown>,
+            } as any,
             recordCount: products.length,
             status: "SUCCESS",
           },

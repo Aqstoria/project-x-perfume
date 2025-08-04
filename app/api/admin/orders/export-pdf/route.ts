@@ -14,7 +14,7 @@ const exportRequestSchema = z.object({
   includeTotals: z.boolean().default(true),
 });
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate request body
-    const body = await request.json();
+    const body = await _request.json();
     const validatedData = exportRequestSchema.parse(body);
     const { orderIds, exportType, includeCustomerInfo, includeProductDetails, includeTotals } =
       validatedData;

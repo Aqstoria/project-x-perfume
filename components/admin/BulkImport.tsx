@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, FileText, AlertCircle, CheckCircle, X, Download } from "lucide-react";
+import { Upload, FileText, AlertCircle, CheckCircle, Download } from "lucide-react";
 
 interface ImportResult {
   success: boolean;
@@ -11,50 +11,40 @@ interface ImportResult {
 }
 
 interface BulkImportProps {
-  onImportComplete: (results: ImportResult[]) => void;
   templateUrl?: string;
 }
 
-export default function BulkImport({ onImportComplete, templateUrl }: BulkImportProps) {
+export default function BulkImport({ templateUrl }: BulkImportProps) {
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [results, setResults] = useState<ImportResult[]>([]);
   const [fileName, setFileName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (files: FileList) => {
-    if (files.length === 0) return;
-
     const file = files[0];
+    if (!file) return;
+
     setFileName(file.name);
-    setIsUploading(true);
-    setUploadProgress(0);
-    setResults([]);
+
+    // Validate file type
+    const validTypes = ["text/csv", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"];
+    if (!validTypes.includes(file.type)) {
+      console.error("Alleen CSV en Excel bestanden zijn toegestaan");
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      console.error("Bestand is te groot. Maximum grootte is 10MB");
+      return;
+    }
+
+    // Create FormData and upload
+    const formData = new FormData();
+    formData.append("file", file);
 
     try {
-      // Validate file type
-      const validTypes = [
-        "text/csv",
-        "application/vnd.ms-excel",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      ];
-
-      if (!validTypes.includes(file.type)) {
-        setResults([
-          {
-            success: false,
-            message: "Ongeldig bestandstype. Alleen CSV en Excel bestanden zijn toegestaan.",
-          },
-        ]);
-        setIsUploading(false);
-        return;
-      }
-
-      // Create FormData
-      const formData = new FormData();
-      formData.append("file", file);
-
-      // Upload and process
+      setIsUploading(true);
       const response = await fetch("/api/admin/products/bulk-import", {
         method: "POST",
         body: formData,
@@ -64,24 +54,11 @@ export default function BulkImport({ onImportComplete, templateUrl }: BulkImport
 
       if (response.ok) {
         setResults(data.results || []);
-        setUploadProgress(100);
-        onImportComplete(data.results || []);
       } else {
-        setResults([
-          {
-            success: false,
-            message: data.error || "Upload mislukt. Probeer het opnieuw.",
-          },
-        ]);
+        console.error(data.error || "Upload mislukt");
       }
     } catch (error) {
-      console.error("Import error:", error);
-      setResults([
-        {
-          success: false,
-          message: "Er is een fout opgetreden tijdens het uploaden.",
-        },
-      ]);
+      console.error("Netwerkfout bij upload");
     } finally {
       setIsUploading(false);
     }
@@ -176,7 +153,7 @@ export default function BulkImport({ onImportComplete, templateUrl }: BulkImport
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
                   className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${uploadProgress}%` }}
+                  style={{ width: "100%" }}
                 ></div>
               </div>
             </div>

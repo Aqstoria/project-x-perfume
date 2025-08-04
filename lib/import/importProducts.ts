@@ -177,8 +177,8 @@ async function processProductRow(
         success: false,
         error: {
           row: rowIndex + 1,
-          field: error.issues[0].path.join("."),
-          message: error.issues[0].message,
+          field: error.issues && error.issues[0] ? error.issues[0].path.join(".") : "unknown",
+          message: error.issues && error.issues[0] ? error.issues[0].message : "Unknown error",
           data: row,
         },
       };
@@ -330,12 +330,12 @@ export async function processBatch(
     if (result.status === "fulfilled" && result.value) {
       if (result.value.success) {
         successful++;
-      } else if (result.value.skipped) {
+      } else if ('skipped' in result.value && result.value.skipped) {
         skipped++;
         if (result.value.error) {
           errors.push(result.value.error);
         }
-      } else if (result.value.duplicate) {
+      } else if ('duplicate' in result.value && result.value.duplicate) {
         failed++;
         if (result.value.error) {
           duplicates.push(result.value.error);
@@ -345,8 +345,8 @@ export async function processBatch(
         if (result.value.error) {
           errors.push(result.value.error);
         }
-        if (result.value.warning) {
-          warnings.push(result.value.warning);
+        if ('warning' in result.value && result.value.warning) {
+          warnings.push(result.value.warning as ImportWarning);
         }
       }
     } else if (result.status === "rejected") {
@@ -362,7 +362,7 @@ export async function processBatch(
         row: startIndex + index + 1,
         field: "unknown",
         message: errorMessage,
-        data: batchItem,
+        data: batchItem || {},
       });
     }
   });

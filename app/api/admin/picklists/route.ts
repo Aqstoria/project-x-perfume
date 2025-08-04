@@ -9,13 +9,7 @@ const createPicklistSchema = z.object({
   assignedTo: z.string().optional(),
 });
 
-// Validation schema for picklist updates
-const updatePicklistSchema = z.object({
-  status: z.enum(["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"]).optional(),
-  assignedTo: z.string().optional(),
-});
-
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -23,7 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(_request.url);
     const status = searchParams.get("status");
     const assignedTo = searchParams.get("assignedTo");
     const page = parseInt(searchParams.get("page") || "1");
@@ -90,7 +84,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -98,7 +92,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await _request.json();
     const validatedData = createPicklistSchema.parse(body);
 
     // Check if order exists and is approved
@@ -134,7 +128,7 @@ export async function POST(request: NextRequest) {
     const picklist = await prisma.picklist.create({
       data: {
         orderId: validatedData.orderId,
-        assignedTo: validatedData.assignedTo,
+        assignedTo: validatedData.assignedTo ?? null,
         pickItems: {
           create: order.orderItems.map((item) => ({
             productId: item.productId,

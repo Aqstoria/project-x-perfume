@@ -39,9 +39,7 @@ const productSchema = z.object({
     .min(1, "Voorraad is verplicht")
     .regex(/^\d+$/, "Alleen positieve gehele getallen toegestaan")
     .refine((val) => parseInt(val) >= 0, "Voorraad mag niet negatief zijn"),
-  status: z.enum(["CONCEPT", "ACTIEF", "NIET_BESCHIKBAAR", "VERVALLEN"], {
-    required_error: "Status is verplicht",
-  }),
+  status: z.enum(["CONCEPT", "ACTIEF", "NIET_BESCHIKBAAR", "VERVALLEN"]),
   maxOrderQuantity: z.string().optional(),
   starRating: z.string().optional(),
   category: z.string().optional(),
@@ -675,7 +673,7 @@ export default function ProductForm({ csrfToken, session }: ProductFormProps) {
                   <div
                     className="prose prose-sm max-w-none"
                     dangerouslySetInnerHTML={{
-                      __html: marked(formData.beschrijving),
+                      __html: marked(formData.beschrijving || "") as string,
                     }}
                   />
                 </div>
@@ -692,7 +690,7 @@ export default function ProductForm({ csrfToken, session }: ProductFormProps) {
                   images={formData.afbeeldingen}
                   onImagesChange={(images: string[]) => handleInputChange("afbeeldingen", images)}
                   maxImages={5}
-                  productId={undefined} // Will be generated for new products
+                  productId="new"
                 />
                 {errors.afbeeldingen && (
                   <p className="mt-1 text-sm text-red-600">{errors.afbeeldingen}</p>

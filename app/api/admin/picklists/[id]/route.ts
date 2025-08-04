@@ -9,16 +9,13 @@ const updatePicklistSchema = z.object({
   assignedTo: z.string().optional(),
 });
 
-// Validation schema for pick item updates
-const updatePickItemSchema = z.object({
-  picked: z.number().min(0).optional(),
-  status: z.enum(["PENDING", "PICKED", "PARTIALLY_PICKED", "OUT_OF_STOCK"]).optional(),
-});
+
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // request parameter is required by Next.js 15 but not used in this handler
   const { id } = await params;
   try {
     // Check authentication and admin role
@@ -76,7 +73,7 @@ export async function GET(
 }
 
 export async function PATCH(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -87,7 +84,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await _request.json();
     const validatedData = updatePicklistSchema.parse(body);
 
     const updateData: any = {};
@@ -153,7 +150,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;

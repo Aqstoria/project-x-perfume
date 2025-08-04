@@ -237,7 +237,9 @@ export class FileValidator {
           validationSchema.parse(value);
         } catch (error) {
           if (error instanceof z.ZodError) {
-            errors.push(`Rij ${rowIndex + 1}, kolom "${actualCol}": ${error.issues[0].message}`);
+            if (error.issues && error.issues[0]) {
+              errors.push(`Rij ${rowIndex + 1}, kolom "${actualCol}": ${error.issues[0].message}`);
+            }
           }
         }
       }

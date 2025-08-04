@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getImportHistoryById } from "./importHistory";
+import { ImportHistoryEntry } from "./importHistory";
 
 export interface RollbackResult {
   success: boolean;
@@ -21,334 +22,137 @@ export interface RollbackOptions {
  */
 export class ImportRollback {
   private importId: string;
-  private importEntry: Record<string, unknown> | null = null;
+  private importEntry: ImportHistoryEntry | null = null;
 
   constructor(importId: string) {
     this.importId = importId;
   }
 
-  /**
-   * Initialize rollback by loading import history
-   */
-  async initialize(): Promise<boolean> {
-    try {
-      this.importEntry = await getImportHistoryById(this.importId);
-      if (!this.importEntry) {
-        throw new Error(`Import with ID ${this.importId} not found`);
-      }
-
-      // Only allow rollback for completed or failed imports
-      if (this.importEntry.status === "cancelled") {
-        throw new Error("Cannot rollback cancelled imports");
-      }
-
-      return true;
-    } catch (error) {
-      console.error("Error initializing rollback:", error);
-      return false;
+  async rollback() {
+    if (!this.importId) {
+      throw new Error("Import ID is required for rollback");
     }
-  }
 
-  /**
-   * Create a backup of current state before rollback
-   */
-  private async createBackup(): Promise<string> {
-    const backupId = `backup_${this.importId}_${Date.now()}`;
+    // Get import history entry
+    this.importEntry = await getImportHistoryById(this.importId);
 
-    // Create backup of products that were imported in this session
-    const importedProducts = await prisma.product.findMany({
-      where: {
-        importSessionId: this.importId,
-      },
-    });
+    if (!this.importEntry) {
+      throw new Error("Import history not found");
+    }
 
-    // Store backup in a separate table or file
-    await prisma.importBackup.create({
-      data: {
-        id: backupId,
-        importId: this.importId,
-        backupData: JSON.stringify(importedProducts),
-        createdAt: new Date(),
-        description: `Backup before rollback of import ${this.importId}`,
-      },
-    });
+    console.log("🔄 Starting rollback for import:", this.importId);
 
-    return backupId;
-  }
-
-  /**
-   * Execute rollback based on strategy
-   */
-  async executeRollback(options: RollbackOptions): Promise<RollbackResult> {
     try {
-      if (!this.importEntry) {
-        await this.initialize();
-      }
+      // Step 1: Find products imported in this session
+      const importedProducts = await prisma.product.findMany({
+        where: {
+          // Use createdAt to find products imported around the same time
+          createdAt: {
+            gte: new Date(this.importEntry.createdAt.getTime() - 60000), // 1 minute before
+            lte: new Date(this.importEntry.createdAt.getTime() + 60000), // 1 minute after
+          },
+        },
+      });
 
-      if (!this.importEntry) {
+      console.log(`📦 Found ${importedProducts.length} products to rollback`);
+
+      if (importedProducts.length === 0) {
+        console.log("⚠️ No products found to rollback");
         return {
-          success: false,
-          message: "Import not found or cannot be rolled back",
-          rolledBackProducts: 0,
-          errors: ["Import not found"],
+          success: true,
+          message: "No products found to rollback",
+          entitiesRestored: 0,
         };
       }
 
-      // Create backup if requested
-      let backupId: string | null = null;
-      if (options.backupBeforeRollback) {
-        backupId = await this.createBackup();
-      }
+      // Step 2: Delete imported products
+      const deleteResult = await prisma.product.deleteMany({
+        where: {
+          id: {
+            in: importedProducts.map((p) => p.id),
+          },
+        },
+      });
 
-      let rolledBackProducts = 0;
-      const errors: string[] = [];
+      console.log(`🗑️ Deleted ${deleteResult.count} products`);
 
-      switch (options.rollbackStrategy) {
-        case "all":
-          rolledBackProducts = await this.rollbackAllProducts();
-          break;
-
-        case "failed_only":
-          rolledBackProducts = await this.rollbackFailedProducts();
-          break;
-
-        case "selective":
-          rolledBackProducts = await this.rollbackSelectiveProducts();
-          break;
-
-        default:
-          throw new Error("Invalid rollback strategy");
-      }
-
-      // Update import history with rollback information
+      // Step 3: Update import history
       await prisma.importHistory.update({
         where: { id: this.importId },
         data: {
-          status: "rolled_back",
-          notes: `${this.importEntry.notes || ""}\n\nRollback executed: ${rolledBackProducts} products rolled back. Backup ID: ${backupId || "None"}`,
+          importedRows: 0,
+          failedRows: this.importEntry.totalRows,
+          errors: ["Rollback completed - all imported products deleted"],
         },
       });
 
+      console.log("✅ Rollback completed successfully");
+
       return {
         success: true,
-        message: `Successfully rolled back ${rolledBackProducts} products`,
-        rolledBackProducts,
-        errors,
+        message: `Successfully rolled back ${deleteResult.count} products`,
+        entitiesRestored: deleteResult.count,
       };
     } catch (error) {
-      console.error("Rollback error:", error);
-      return {
-        success: false,
-        message: "Rollback failed",
-        rolledBackProducts: 0,
-        errors: [error instanceof Error ? error.message : "Unknown error"],
-      };
+      console.error("❌ Rollback failed:", error);
+      throw new Error(`Rollback failed: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 
-  /**
-   * Rollback all products from this import
-   */
-  private async rollbackAllProducts(): Promise<number> {
-    const result = await prisma.product.deleteMany({
-      where: {
-        importSessionId: this.importId,
-      },
-    });
+  async createBackup() {
+    if (!this.importId) {
+      throw new Error("Import ID is required for backup");
+    }
 
-    return result.count;
-  }
+    console.log("💾 Creating backup for import:", this.importId);
 
-  /**
-   * Rollback only products that had errors during import
-   */
-  private async rollbackFailedProducts(): Promise<number> {
-    // This would require tracking which specific products failed during import
-    // For now, we'll implement a basic version that rolls back products with errors
-    const failedProducts = await prisma.product.findMany({
-      where: {
-        importSessionId: this.importId,
-        // Add conditions for failed products (e.g., validation errors)
-        OR: [{ name: null }, { ean: null }, { purchasePrice: null }],
-      },
-    });
+    try {
+      // Get import history entry
+      const importEntry = await getImportHistoryById(this.importId);
+      if (!importEntry) {
+        throw new Error("Import history not found");
+      }
 
-    const deleteResult = await prisma.product.deleteMany({
-      where: {
-        id: {
-          in: failedProducts.map((p) => p.id),
+      // Find products imported in this session
+      const importedProducts = await prisma.product.findMany({
+        where: {
+          createdAt: {
+            gte: new Date(importEntry.createdAt.getTime() - 60000),
+            lte: new Date(importEntry.createdAt.getTime() + 60000),
+          },
         },
-      },
-    });
-
-    return deleteResult.count;
-  }
-
-  /**
-   * Rollback selective products (for future implementation)
-   */
-  private async rollbackSelectiveProducts(): Promise<number> {
-    // This would allow administrators to select specific products to rollback
-    // For now, we'll implement a basic version
-    return await this.rollbackAllProducts();
-  }
-
-  /**
-   * Get rollback preview - shows what would be rolled back
-   */
-  async getRollbackPreview(strategy: "all" | "failed_only" | "selective"): Promise<{
-    totalProducts: number;
-    productsToRollback: number;
-    estimatedImpact: string;
-    warnings: string[];
-  }> {
-    try {
-      if (!this.importEntry) {
-        await this.initialize();
-      }
-
-      const totalProducts = await prisma.product.count({
-        where: { importSessionId: this.importId },
       });
 
-      let productsToRollback = 0;
-      const warnings: string[] = [];
+      console.log(`📦 Found ${importedProducts.length} products to backup`);
 
-      switch (strategy) {
-        case "all":
-          productsToRollback = totalProducts;
-          if (totalProducts > 100) {
-            warnings.push("Large rollback detected - this may take significant time");
-          }
-          break;
-
-        case "failed_only":
-          const failedCount = await prisma.product.count({
-            where: {
-              importSessionId: this.importId,
-              OR: [{ name: null }, { ean: null }, { purchasePrice: null }],
-            },
-          });
-          productsToRollback = failedCount;
-          break;
-
-        case "selective":
-          productsToRollback = totalProducts; // Default to all for selective
-          warnings.push("Selective rollback requires manual product selection");
-          break;
-      }
-
-      const estimatedImpact = this.getEstimatedImpact(productsToRollback);
-
-      return {
-        totalProducts,
-        productsToRollback,
-        estimatedImpact,
-        warnings,
-      };
-    } catch (error) {
-      console.error("Error getting rollback preview:", error);
-      return {
-        totalProducts: 0,
-        productsToRollback: 0,
-        estimatedImpact: "Unknown",
-        warnings: ["Error calculating rollback preview"],
-      };
-    }
-  }
-
-  /**
-   * Get estimated impact of rollback
-   */
-  private getEstimatedImpact(productCount: number): string {
-    if (productCount === 0) {
-      return "No impact - no products to rollback";
-    } else if (productCount < 10) {
-      return "Low impact - quick rollback";
-    } else if (productCount < 100) {
-      return "Medium impact - moderate rollback time";
-    } else {
-      return "High impact - may take significant time";
-    }
-  }
-
-  /**
-   * Restore from backup
-   */
-  async restoreFromBackup(backupId: string): Promise<RollbackResult> {
-    try {
-      const backup = await prisma.importBackup.findUnique({
-        where: { id: backupId },
-      });
-
-      if (!backup) {
+      if (importedProducts.length === 0) {
+        console.log("⚠️ No products found to backup");
         return {
-          success: false,
-          message: "Backup not found",
-          rolledBackProducts: 0,
-          errors: ["Backup not found"],
+          success: true,
+          message: "No products found to backup",
+          backupId: null,
         };
       }
 
-      let backupData;
-      try {
-        backupData = JSON.parse(backup.backupData);
-      } catch (error) {
-        console.error("Error parsing backup data:", error);
-        return {
-          success: false,
-          message: "Invalid backup data format",
-          rolledBackProducts: 0,
-          errors: ["Invalid backup data format"],
-        };
-      }
-
-      // Restore products from backup
-      const restoredProducts = await prisma.product.createMany({
-        data: backupData.map((product: Record<string, unknown>) => ({
-          ...product,
-          id: undefined, // Let Prisma generate new IDs
-          importSessionId: this.importId,
-        })),
+      // Create snapshot
+      const snapshot = await prisma.importSnapshot.create({
+        data: {
+          importId: this.importId,
+          entityType: importEntry.entityType,
+          snapshotData: importedProducts,
+        },
       });
+
+      console.log("✅ Backup created successfully:", snapshot.id);
 
       return {
         success: true,
-        message: `Successfully restored ${restoredProducts.count} products from backup`,
-        rolledBackProducts: restoredProducts.count,
-        errors: [],
+        message: `Backup created for ${importedProducts.length} products`,
+        backupId: snapshot.id,
       };
     } catch (error) {
-      console.error("Restore error:", error);
-      return {
-        success: false,
-        message: "Restore failed",
-        rolledBackProducts: 0,
-        errors: [error instanceof Error ? error.message : "Unknown error"],
-      };
+      console.error("❌ Backup creation failed:", error);
+      throw new Error(`Backup creation failed: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
-  }
-
-  /**
-   * Get available backups for this import
-   */
-  async getAvailableBackups(): Promise<
-    Array<{
-      id: string;
-      createdAt: Date;
-      description: string;
-    }>
-  > {
-    const backups = await prisma.importBackup.findMany({
-      where: { importId: this.importId },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        createdAt: true,
-        description: true,
-      },
-    });
-
-    return backups;
   }
 }

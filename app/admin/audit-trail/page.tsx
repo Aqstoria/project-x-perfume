@@ -25,5 +25,15 @@ export default async function AuditTrailPage() {
     // Continue without initial logs if fetch fails
   }
 
-  return <AuditTrail initialLogs={initialLogs} />;
+  return <AuditTrail initialLogs={initialLogs?.logs?.map(log => ({
+    id: log.id,
+    userId: log.userId || "unknown",
+    action: log.action,
+    entity: log.entity,
+    entityId: log.entityId || "unknown",
+    details: log.details as Record<string, unknown>,
+    ipAddress: log.ipAddress || "unknown",
+    userAgent: log.userAgent || "unknown",
+    createdAt: log.createdAt.toISOString(),
+  })) || null} />;
 }

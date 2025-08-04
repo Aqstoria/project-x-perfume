@@ -39,11 +39,11 @@ const customerImportSchema = z.object({
   }),
 });
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     await requireAdmin();
 
-    const formData = await request.formData();
+    const formData = await _request.formData();
     const file = formData.get("file") as File;
 
     if (!file) {

@@ -22,22 +22,17 @@ export interface ExportFilters {
   category?: string;
   subcategory?: string;
   availability?: "in_stock" | "out_of_stock" | "all";
-  minRating?: number | undefined;
-  maxRating?: number | undefined;
-  minPrice?: number | undefined;
-  maxPrice?: number | undefined;
+  minRating?: number;
+  maxRating?: number;
+  minPrice?: number;
+  maxPrice?: number;
   search?: string;
 }
 
 interface ProductExportDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  currentFilters?: {
-    search?: string;
-    brand?: string;
-    content?: string;
-    availability?: string;
-  };
+  currentFilters?: ExportFilters;
 }
 
 export default function ProductExportDialog({
@@ -50,25 +45,17 @@ export default function ProductExportDialog({
   const [availableColumns, setAvailableColumns] = useState<ExportColumn[]>([]);
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [format, setFormat] = useState<"csv" | "excel">("csv");
-  const [filters, setFilters] = useState<ExportFilters>(() => {
-    const baseFilters: ExportFilters = { availability: "all" };
-
-    if (currentFilters) {
-      return {
-        ...baseFilters,
-        search: currentFilters.search,
-        brand: currentFilters.brand,
-        availability:
-          currentFilters.availability === "available"
-            ? "in_stock"
-            : currentFilters.availability === "outOfStock"
-              ? "out_of_stock"
-              : "all",
-      };
-    }
-
-    return baseFilters;
-  });
+  const [filters, setFilters] = useState<ExportFilters>(() => ({
+    search: currentFilters?.search || "",
+    brand: currentFilters?.brand || "",
+    availability: (currentFilters?.availability as "in_stock" | "out_of_stock" | "all") || "all",
+    ...(currentFilters?.category && { category: currentFilters.category }),
+    ...(currentFilters?.subcategory && { subcategory: currentFilters.subcategory }),
+    ...(currentFilters?.minRating && { minRating: currentFilters.minRating }),
+    ...(currentFilters?.maxRating && { maxRating: currentFilters.maxRating }),
+    ...(currentFilters?.minPrice && { minPrice: currentFilters.minPrice }),
+    ...(currentFilters?.maxPrice && { maxPrice: currentFilters.maxPrice }),
+  }));
   const [showSuccess, setShowSuccess] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
 
@@ -165,15 +152,15 @@ export default function ProductExportDialog({
 
     if (currentFilters) {
       setFilters({
-        ...baseFilters,
-        search: currentFilters.search,
-        brand: currentFilters.brand,
-        availability:
-          currentFilters.availability === "available"
-            ? "in_stock"
-            : currentFilters.availability === "outOfStock"
-              ? "out_of_stock"
-              : "all",
+        search: currentFilters?.search || "",
+        brand: currentFilters?.brand || "",
+        availability: (currentFilters?.availability as "in_stock" | "out_of_stock" | "all") || "all",
+        ...(currentFilters?.category && { category: currentFilters.category }),
+        ...(currentFilters?.subcategory && { subcategory: currentFilters.subcategory }),
+        ...(currentFilters?.minRating && { minRating: currentFilters.minRating }),
+        ...(currentFilters?.maxRating && { maxRating: currentFilters.maxRating }),
+        ...(currentFilters?.minPrice && { minPrice: currentFilters.minPrice }),
+        ...(currentFilters?.maxPrice && { maxPrice: currentFilters.maxPrice }),
       });
     } else {
       setFilters(baseFilters);
@@ -332,7 +319,7 @@ export default function ProductExportDialog({
                     onChange={(e) =>
                       setFilters((prev) => ({
                         ...prev,
-                        minPrice: e.target.value ? parseFloat(e.target.value) : undefined,
+                        ...(e.target.value ? { minPrice: parseFloat(e.target.value) } : {}),
                       }))
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -348,7 +335,7 @@ export default function ProductExportDialog({
                     onChange={(e) =>
                       setFilters((prev) => ({
                         ...prev,
-                        maxPrice: e.target.value ? parseFloat(e.target.value) : undefined,
+                        ...(e.target.value ? { maxPrice: parseFloat(e.target.value) } : {}),
                       }))
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -368,7 +355,7 @@ export default function ProductExportDialog({
                     onChange={(e) =>
                       setFilters((prev) => ({
                         ...prev,
-                        minRating: e.target.value ? parseInt(e.target.value) : undefined,
+                        ...(e.target.value ? { minRating: parseInt(e.target.value) } : {}),
                       }))
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

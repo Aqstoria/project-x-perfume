@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileText, FileSpreadsheet, FileCsv, X, Check } from "lucide-react";
+import { Download, FileText, FileSpreadsheet, X, Check } from "lucide-react";
 
 interface ExportOptions {
   format: "pdf" | "excel" | "csv";
@@ -44,7 +44,7 @@ export default function ExportDialog({
     {
       id: "csv",
       name: "CSV (.csv)",
-      icon: FileCsv,
+      icon: FileText,
       description: "Universal format, compatible with all systems",
     },
     {

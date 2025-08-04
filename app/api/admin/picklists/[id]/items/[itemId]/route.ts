@@ -145,7 +145,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
-  const { id, itemId } = await params;
+  const { itemId } = await params;
   try {
     // Check authentication and admin role
     const session = await auth();

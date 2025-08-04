@@ -10,10 +10,10 @@ const integrationSchema = z.object({
   apiKey: z.string().optional(),
   apiSecret: z.string().optional(),
   webhookUrl: z.string().url().optional(),
-  settings: z.record(z.any()).optional(),
+  settings: z.record(z.string(), z.any()).optional(),
 });
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await _request.json();
     const validatedData = integrationSchema.parse(body);
 
     // Check if integration already exists for this platform
@@ -58,15 +58,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const integrationData: any = {
+      platform: validatedData.platform,
+      isActive: validatedData.isActive,
+    };
+
+    if (validatedData.apiKey) {
+      integrationData.apiKey = validatedData.apiKey;
+    }
+    if (validatedData.apiSecret) {
+      integrationData.apiSecret = validatedData.apiSecret;
+    }
+    if (validatedData.webhookUrl) {
+      integrationData.webhookUrl = validatedData.webhookUrl;
+    }
+    if (validatedData.settings) {
+      integrationData.settings = validatedData.settings;
+    }
+
     const integration = await prisma.integration.create({
-      data: {
-        platform: validatedData.platform,
-        isActive: validatedData.isActive,
-        apiKey: validatedData.apiKey,
-        apiSecret: validatedData.apiSecret,
-        webhookUrl: validatedData.webhookUrl,
-        settings: validatedData.settings,
-      },
+      data: integrationData,
     });
 
     return NextResponse.json(integration, { status: 201 });

@@ -9,11 +9,11 @@ export interface CustomerExportFilters {
   search?: string;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     await requireAdmin();
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(_request.url);
     const status = searchParams.get("status") || "all";
     const country = searchParams.get("country") || "";
     const search = searchParams.get("search") || "";

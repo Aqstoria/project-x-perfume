@@ -518,9 +518,7 @@ export function ProductList({ products }: ProductListProps) {
         currentFilters={{
           search: searchTerm,
           brand: selectedBrand,
-          content: selectedContent,
-          status: selectedStatus,
-          availability: availabilityFilter,
+          availability: availabilityFilter as "in_stock" | "out_of_stock" | "all",
         }}
       />
     </div>

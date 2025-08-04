@@ -63,11 +63,11 @@ export async function createAuditLog(data: AuditLogData, request?: Request) {
 
     const auditLog = await prisma.auditLog.create({
       data: {
-        userId: userId || null,
+        userId: userId || "unknown",
         action: data.action,
         entity: data.entity,
         entityId: data.entityId || null,
-        details: data.details || {},
+        details: data.details ? JSON.parse(JSON.stringify(data.details)) : null,
         ipAddress,
         userAgent,
       },

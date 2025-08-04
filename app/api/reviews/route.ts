@@ -12,8 +12,8 @@ const reviewSchema = z.object({
 });
 
 // GET /api/reviews?productId=...
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+export async function GET(_request: NextRequest) {
+      const { searchParams } = new URL(_request.url);
   const productId = searchParams.get("productId");
   if (!productId) {
     return NextResponse.json({ error: "productId is required" }, { status: 400 });
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/reviews
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   const session = await auth();
   if (!session || session.user.role !== "BUYER") {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
   if (!customerId) {
     return NextResponse.json({ error: "No customer profile" }, { status: 403 });
   }
-  const body = await request.json();
+  const body = await _request.json();
   let parsed;
   try {
     parsed = reviewSchema.parse(body);
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       productId: parsed.productId,
       customerId,
       rating: parsed.rating,
-      title: parsed.title,
+      title: parsed.title || null,
       comment: parsed.comment,
       status: "PENDING",
     },

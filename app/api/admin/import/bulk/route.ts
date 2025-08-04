@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { Decimal } from "@prisma/client/runtime/library";
-import { Prisma } from "@prisma/client";
+import { parse } from "csv-parse";
 
 // Validation schemas
 const productImportSchema = z.object({
@@ -28,12 +28,7 @@ const productImportSchema = z.object({
   tags: z.string().optional(),
 });
 
-const importRequestSchema = z.object({
-  data: z.array(z.record(z.string())),
-  columnMapping: z.record(z.string()),
-  overwriteExisting: z.boolean().default(false),
-  validateData: z.boolean().default(true),
-});
+
 
 interface ImportError {
   row: number;
@@ -48,16 +43,7 @@ interface ImportWarning {
   message: string;
 }
 
-interface ImportResult {
-  success: boolean;
-  totalRows: number;
-  successfulRows: number;
-  failedRows: number;
-  errors: ImportError[];
-  warnings: ImportWarning[];
-  processingTime: number;
-  importId?: string; // Added importId to the interface
-}
+
 
 // Process a single product row
 async function processProductRow(
@@ -194,7 +180,30 @@ async function processBatch(
   return { successful, failed, errors, warnings };
 }
 
-export async function POST(request: NextRequest) {
+// Parse CSV file
+async function parseFile(file: File): Promise<Record<string, unknown>[]> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      parse(text, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true,
+      }, (err, records) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(records as Record<string, unknown>[]);
+        }
+      });
+    };
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsText(file);
+  });
+}
+
+export async function POST(_request: NextRequest) {
   try {
     // Check admin authentication
     const session = await auth();
@@ -202,7 +211,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const formData = await request.formData();
+    const formData = await _request.formData();
     const file = formData.get("file") as File;
     const columnMapping = JSON.parse(formData.get("columnMapping") as string);
 
@@ -231,7 +240,7 @@ export async function POST(request: NextRequest) {
     const allWarnings: ImportWarning[] = [];
 
     for (let i = 0; i < batches.length; i++) {
-      const batch = batches[i];
+      const batch = batches[i]!;
       const startIndex = i * batchSize;
       const result = await processBatch(batch, columnMapping, startIndex);
 
@@ -244,18 +253,25 @@ export async function POST(request: NextRequest) {
     const processingTime = Date.now() - startTime;
 
     // Create import record
+    const importData: any = {
+      userId: session.user.id,
+      fileName: file.name,
+      totalRows: data.length,
+      successfulRows: totalSuccessful,
+      failedRows: totalFailed,
+      processingTime,
+      status: totalFailed === 0 ? "SUCCESS" : totalSuccessful === 0 ? "FAILED" : "PARTIAL",
+    };
+
+    if (allErrors.length > 0) {
+      importData.errors = allErrors;
+    }
+    if (allWarnings.length > 0) {
+      importData.warnings = allWarnings;
+    }
+
     const importRecord = await prisma.importHistory.create({
-      data: {
-        userId: session.user.id,
-        fileName: file.name,
-        totalRows: data.length,
-        successfulRows: totalSuccessful,
-        failedRows: totalFailed,
-        processingTime,
-        status: totalFailed === 0 ? "SUCCESS" : totalSuccessful === 0 ? "FAILED" : "PARTIAL",
-        errors: allErrors.length > 0 ? JSON.stringify(allErrors) : null,
-        warnings: allWarnings.length > 0 ? JSON.stringify(allWarnings) : null,
-      },
+      data: importData,
     });
 
     return NextResponse.json({

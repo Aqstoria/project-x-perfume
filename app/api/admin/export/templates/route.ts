@@ -10,11 +10,11 @@ const templateSchema = z.object({
   description: z.string().optional(),
   exportType: z.enum(["PRODUCT", "ORDER", "CUSTOMER"]),
   exportFormat: z.enum(["CSV", "EXCEL", "PDF"]),
-  parameters: z.record(z.unknown()),
+  parameters: z.record(z.string(), z.unknown()),
   isDefault: z.boolean().default(false),
 });
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Parse query parameters
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(_request.url);
     const exportType = searchParams.get("exportType");
     const exportFormat = searchParams.get("exportFormat");
 
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await _request.json();
     const validatedData = templateSchema.parse(body);
 
     // If this is a default template, unset other defaults for the same type
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT(_request: NextRequest) {
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -116,7 +116,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await _request.json();
     const { id, ...updateData } = body;
 
     if (!id) {
@@ -163,7 +163,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(_request: NextRequest) {
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -171,7 +171,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(_request.url);
     const id = searchParams.get("id");
 
     if (!id) {

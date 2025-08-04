@@ -2,36 +2,30 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import type { AuditLogsResponse } from "@/lib/audit";
 
 interface AuditLog {
   id: string;
-  userId: string | null;
+  userId: string;
   action: string;
   entity: string;
-  entityId: string | null;
-  details: unknown;
-  ipAddress: string | null;
-  userAgent: string | null;
-  createdAt: Date;
-  user?: {
-    id: string;
-    username: string;
-    role: string;
-  } | null;
+  entityId: string;
+  details: Record<string, unknown>;
+  ipAddress: string;
+  userAgent: string;
+  createdAt: string;
 }
 
 interface AuditTrailProps {
-  initialLogs?: AuditLogsResponse | null;
+  initialLogs?: AuditLog[] | null;
 }
 
 export default function AuditTrail({ initialLogs }: AuditTrailProps) {
   const { data: session } = useSession();
-  const [logs, setLogs] = useState<AuditLog[]>(initialLogs?.logs || []);
+  const [logs, setLogs] = useState<AuditLog[]>(initialLogs || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(initialLogs?.totalPages || 0);
+  const [totalPages, setTotalPages] = useState(0);
   const [filters, setFilters] = useState({
     action: "",
     entity: "",
@@ -43,41 +37,16 @@ export default function AuditTrail({ initialLogs }: AuditTrailProps) {
   const fetchAuditLogs = async () => {
     try {
       setLoading(true);
-      setError(null);
-
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: "50",
-        ...filters,
-      });
-
-      // Use absolute URL for client-side fetch
-      const apiUrl = `/api/admin/audit-logs?${params}`;
-      console.log("Fetching audit logs from:", apiUrl);
-
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        // Include credentials for session
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Audit logs API error:", response.status, errorText);
-        throw new Error(`Failed to fetch audit logs: ${response.status} ${errorText}`);
+      const response = await fetch(`/api/admin/audit-logs?page=${page}&limit=20`);
+      if (response.ok) {
+        const data = await response.json();
+        setLogs(data.logs || []);
+        setTotalPages(data.totalPages || 0);
+      } else {
+        setError("Failed to fetch audit logs");
       }
-
-      const data: AuditLogsResponse = await response.json();
-      setLogs(data.logs);
-      setTotalPages(data.totalPages);
     } catch (error) {
-      console.error("Error fetching audit logs:", error);
-      setError(error instanceof Error ? error.message : "Failed to fetch audit logs");
-      setLogs([]);
-      setTotalPages(0);
+      setError("Error fetching audit logs");
     } finally {
       setLoading(false);
     }
@@ -290,14 +259,10 @@ export default function AuditTrail({ initialLogs }: AuditTrailProps) {
                     {logs.map((log) => (
                       <tr key={log.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatDate(log.createdAt)}
+                          {formatDate(new Date(log.createdAt))}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {log.user?.username || "Unknown"}
-                          <br />
-                          <span className="text-xs text-gray-500">
-                            {log.user?.role || "Unknown"}
-                          </span>
+                          {log.userId || "Unknown"}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span

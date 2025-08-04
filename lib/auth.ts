@@ -1,85 +1,74 @@
 import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
-import { prisma } from "./prisma";
+import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import type { NextAuthConfig } from "next-auth";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+const config: NextAuthConfig = {
+  adapter: PrismaAdapter(prisma) as any,
   providers: [
     Credentials({
+      id: "credentials",
       name: "credentials",
       credentials: {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
-        markup: { label: "Markup Percentage", type: "number" },
+        markup: { label: "Markup", type: "text" },
         role: { label: "Role", type: "text" },
       },
       async authorize(credentials: Record<string, unknown>) {
-        try {
-          if (!credentials?.username || typeof credentials.username !== "string") {
-            return null;
-          }
-
-          const user = await prisma.user.findUnique({
-            where: { username: credentials.username },
-            include: {
-              customer: true, // Include customer for buyers
-            },
-          });
-
-          if (!user || !user.isActive) {
-            return null;
-          }
-
-          // Admin login flow
-          if (user.role === "ADMIN") {
-            if (!credentials.password || typeof credentials.password !== "string") {
-              throw new Error("Password required for admin login");
-            }
-
-            if (!user.password) {
-              throw new Error("Admin user has no password set");
-            }
-
-            const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-
-            if (!isPasswordValid) {
-              throw new Error("Invalid password");
-            }
-
-            return {
-              id: user.id,
-              username: user.username,
-              role: user.role,
-            };
-          }
-
-          // Buyer login flow
-          if (user.role === "BUYER") {
-            // Markup is now optional and comes as decimal (0-1)
-            let markup = 0;
-            if (credentials.markup) {
-              const markupNum = parseFloat(credentials.markup.toString());
-              if (!isNaN(markupNum) && markupNum >= 0 && markupNum <= 1) {
-                markup = markupNum;
-              }
-            }
-
-            return {
-              id: user.id,
-              username: user.username,
-              role: user.role,
-              markup: markup,
-              customerId: user.customerId, // Include customer ID
-            };
-          }
-
-          return null;
-        } catch (error) {
-          console.error("Authentication error:", error);
+        if (!credentials.username || !credentials.password) {
           return null;
         }
+
+        const user = await prisma.user.findUnique({
+          where: { username: credentials.username as string },
+        });
+
+        if (!user || !user.password) {
+          return null;
+        }
+
+        const isPasswordValid = await bcrypt.compare(
+          credentials.password as string,
+          user.password
+        );
+
+        if (!isPasswordValid) {
+          return null;
+        }
+
+        // Admin login flow
+        if (user.role === "ADMIN") {
+          return {
+            id: user.id,
+            username: user.username,
+            role: user.role,
+          };
+        }
+
+        // Buyer login flow
+        if (user.role === "BUYER") {
+          // For buyers, get customer info and markup
+          const customer = await prisma.customer.findUnique({
+            where: { id: user.customerId || "" },
+          });
+
+          if (!customer) {
+            throw new Error("Customer not found");
+          }
+
+          return {
+            id: user.id,
+            username: user.username,
+            role: user.role,
+            markup: customer.generalMargin.toNumber(),
+            customerId: user.customerId || undefined,
+          };
+        }
+
+        return null;
       },
     }),
   ],
@@ -87,38 +76,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: any) {
       if (user) {
         token.id = user.id;
         token.username = user.username;
         token.role = user.role;
-        if ("markup" in user && user.markup !== undefined) {
-          token.markup = user.markup;
-        }
-        if ("customerId" in user && user.customerId) {
-          token.customerId = user.customerId;
-        }
+        token.customerId = user.customerId;
+        token.markup = user.markup;
       }
       return token;
     },
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string;
-        session.user.username = token.username as string;
-        session.user.role = token.role as string;
-        if ("markup" in token && token.markup !== undefined) {
-          session.user.markup = token.markup as number;
-        }
-        if ("customerId" in token && token.customerId) {
-          session.user.customerId = token.customerId as string;
-        }
+    async session({ session, token }: any) {
+      if (token) {
+        session.user.id = token.id;
+        session.user.username = token.username;
+        session.user.role = token.role;
+        session.user.customerId = token.customerId;
+        session.user.markup = token.markup;
       }
       return session;
     },
-    async redirect({ url, baseUrl }) {
-      // Allow relative callback URLs
+    async redirect({ url, baseUrl }: any) {
       if (url.startsWith("/")) return `${baseUrl}${url}`;
-      // Allow callback URLs on the same origin
       else if (new URL(url).origin === baseUrl) return url;
       return baseUrl;
     },
@@ -126,4 +105,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn: "/login",
   },
-});
+};
+
+const handler = NextAuth(config);
+
+export const { handlers, auth, signIn, signOut } = handler;

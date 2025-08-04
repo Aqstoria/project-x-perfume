@@ -64,7 +64,7 @@ export async function calculateProductPrice(
 
   // Check for product-specific price override
   const productPriceOverride = customer.customerPrices.find(
-    (cp: { productId: string; price: number }) => cp.productId === productId,
+    (cp) => cp.productId === productId,
   );
 
   if (productPriceOverride) {
@@ -77,7 +77,7 @@ export async function calculateProductPrice(
     // Check for category-specific margin override
     if (product.category) {
       const categoryMargin = customer.customerMargins.find(
-        (cm: { category: string; margin: number }) => cm.category === product.category,
+        (cm) => cm.category === product.category,
       );
       if (categoryMargin) {
         marginPercentage = Number(categoryMargin.margin);
@@ -91,7 +91,7 @@ export async function calculateProductPrice(
     // Apply brand-specific discount
     if (product.brand) {
       const brandDiscount = customer.customerDiscounts.find(
-        (cd: { brand: string; discount: number }) => cd.brand === product.brand,
+        (cd) => cd.brand === product.brand,
       );
       if (brandDiscount) {
         discountAmount = finalPrice * (Number(brandDiscount.discount) / 100);
@@ -129,8 +129,8 @@ export async function calculateProductPrice(
  * Calculate quantity-based discount
  */
 async function calculateQuantityDiscount(
-  customerId: string,
-  productId: string,
+  _customerId: string,
+  _productId: string,
   quantity: number,
 ): Promise<number> {
   // This is a simplified implementation

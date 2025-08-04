@@ -15,7 +15,7 @@ const pricingRequestSchema = z.object({
     .min(1),
 });
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Check authentication
     const session = await auth();
@@ -23,11 +23,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await _request.json();
     const { items } = pricingRequestSchema.parse(body);
 
     // Get customer ID from session (assuming buyer role)
-    const customerId = (session.user as Record<string, unknown>).customerId as string;
+    const customerId = (session.user as any).customerId as string;
     if (!customerId) {
       return NextResponse.json({ error: "Customer ID not found" }, { status: 400 });
     }

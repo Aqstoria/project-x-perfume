@@ -74,7 +74,7 @@ export async function middleware(request: NextRequest) {
     if (!session) {
       // Redirect to login for protected routes
       if (pathname.startsWith("/admin") || pathname.startsWith("/dashboard")) {
-        return NextResponse.redirect(new URL("/auth/signin", request.url));
+        return NextResponse.redirect(new URL("/login", request.url));
       }
 
       // Return 401 for API routes
@@ -89,7 +89,7 @@ export async function middleware(request: NextRequest) {
         if (pathname.startsWith("/api/")) {
           return NextResponse.json({ error: "Admin access required" }, { status: 403 });
         }
-        return NextResponse.redirect(new URL("/auth/signin", request.url));
+        return NextResponse.redirect(new URL("/login/admin", request.url));
       }
     }
 
@@ -99,7 +99,7 @@ export async function middleware(request: NextRequest) {
         if (pathname.startsWith("/api/")) {
           return NextResponse.json({ error: "Buyer access required" }, { status: 403 });
         }
-        return NextResponse.redirect(new URL("/auth/signin", request.url));
+        return NextResponse.redirect(new URL("/login/buyer", request.url));
       }
     }
 
@@ -113,7 +113,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // For pages, redirect to login
-    return NextResponse.redirect(new URL("/auth/signin", request.url));
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 }
 

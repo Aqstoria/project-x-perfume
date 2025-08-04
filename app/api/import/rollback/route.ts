@@ -9,7 +9,7 @@ const rollbackSchema = z.object({
   rollbackReason: z.string().optional(),
 });
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate request body
-    const body = await request.json();
+    const body = await _request.json();
     const validatedData = rollbackSchema.parse(body);
     const { importId, rollbackReason } = validatedData;
 
@@ -69,29 +69,32 @@ export async function POST(request: NextRequest) {
       if (snapshot.snapshotData && Array.isArray(snapshot.snapshotData)) {
         for (const entityData of snapshot.snapshotData) {
           if (importHistory.entityType === "Product") {
-            await tx.product.create({
-              data: {
-                id: entityData.id,
-                name: entityData.name,
-                brand: entityData.brand,
-                content: entityData.content,
-                ean: entityData.ean,
-                purchasePrice: entityData.purchasePrice,
-                retailPrice: entityData.retailPrice,
-                stockQuantity: entityData.stockQuantity,
-                maxOrderableQuantity: entityData.maxOrderableQuantity,
-                starRating: entityData.starRating,
-                category: entityData.category,
-                subcategory: entityData.subcategory,
-                description: entityData.description,
-                tags: entityData.tags,
-                status: entityData.status,
-                isActive: entityData.isActive,
-                createdAt: entityData.createdAt,
-                updatedAt: entityData.updatedAt,
-              },
-            });
-            entitiesRestored++;
+            if (entityData) {
+              const productData = entityData as any;
+              await tx.product.create({
+                data: {
+                  id: productData.id,
+                  name: productData.name,
+                  brand: productData.brand,
+                  content: productData.content,
+                  ean: productData.ean,
+                  purchasePrice: productData.purchasePrice,
+                  retailPrice: productData.retailPrice,
+                  stockQuantity: productData.stockQuantity,
+                  maxOrderableQuantity: productData.maxOrderableQuantity,
+                  starRating: productData.starRating,
+                  category: productData.category,
+                  subcategory: productData.subcategory,
+                  description: productData.description,
+                  tags: productData.tags,
+                  status: productData.status,
+                  isActive: productData.isActive,
+                  createdAt: productData.createdAt,
+                  updatedAt: productData.updatedAt,
+                },
+              });
+              entitiesRestored++;
+            }
           }
         }
       }
@@ -102,7 +105,7 @@ export async function POST(request: NextRequest) {
           importId,
           rolledBackBy: session.user.id,
           entitiesRestored,
-          rollbackReason,
+          rollbackReason: rollbackReason || null,
         },
       });
 
@@ -120,8 +123,8 @@ export async function POST(request: NextRequest) {
             rollbackReason,
             fileName: importHistory.fileName,
           },
-          ipAddress: request.headers.get("x-forwarded-for") || request.ip,
-          userAgent: request.headers.get("user-agent"),
+          ipAddress: _request.headers.get("x-forwarded-for") || "unknown",
+          userAgent: _request.headers.get("user-agent"),
         },
       });
 

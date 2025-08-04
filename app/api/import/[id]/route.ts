@@ -8,7 +8,7 @@ const importIdSchema = z.object({
   id: z.string().min(1, "Import ID is required"),
 });
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Check authentication and admin role
     const session = await auth();
@@ -47,11 +47,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Get user who performed rollback if exists
     let rollbackUser = null;
+    let firstRollback = null;
     if (importHistory.rollbacks.length > 0) {
-      rollbackUser = await prisma.user.findUnique({
-        where: { id: importHistory.rollbacks[0].rolledBackBy },
-        select: { username: true },
-      });
+      firstRollback = importHistory.rollbacks[0];
+      if (firstRollback) {
+        rollbackUser = await prisma.user.findUnique({
+          where: { id: firstRollback.rolledBackBy },
+          select: { username: true },
+        });
+      }
     }
 
     // Prepare response data
@@ -72,9 +76,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         importHistory.rollbacks.length > 0
           ? {
               rolledBackBy: rollbackUser?.username || "Unknown",
-              entitiesRestored: importHistory.rollbacks[0].entitiesRestored,
-              rollbackReason: importHistory.rollbacks[0].rollbackReason,
-              rolledBackAt: importHistory.rollbacks[0].createdAt,
+              entitiesRestored: firstRollback?.entitiesRestored || 0,
+              rollbackReason: firstRollback?.rollbackReason || "",
+              rolledBackAt: firstRollback?.createdAt || new Date(),
             }
           : null,
       canRollback: importHistory.rollbacks.length === 0 && importHistory.snapshots.length > 0,

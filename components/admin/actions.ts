@@ -141,51 +141,65 @@ export async function createProduct(formData: FormData) {
         status,
       });
 
-      const nieuwProduct = await prisma.product.create({
-        data: {
-          name,
-          description,
-          content, // Required field for size/volume
-          brand,
-          ean,
-          purchasePrice,
-          retailPrice,
-          stockQuantity, // Correct field name for Prisma
-          maxOrderableQuantity,
-          starRating,
-          category,
-          subcategory,
-          tags,
-          status,
-          isActive,
-        },
-      });
-
-      console.log("✅ Product succesvol aangemaakt:", nieuwProduct);
-
-      // ✅ 6. IMAGES OPSLAAN
-      if (images && images.length > 0) {
-        console.log("📸 Start image opslag...");
-        console.log("🔍 Images om op te slaan:", images);
-
-        const imageData = images.map((imageUrl, index) => ({
-          productId: nieuwProduct.id,
-          url: imageUrl,
-          isMain: index === 0, // First image is main
-          order: index,
-        }));
-
-        await prisma.productImage.createMany({
-          data: imageData,
+      try {
+        const nieuwProduct = await prisma.product.create({
+          data: {
+            name,
+            brand,
+            content,
+            ean,
+            purchasePrice: parseFloat(purchasePrice.toString()),
+            retailPrice: parseFloat(retailPrice.toString()),
+            stockQuantity: parseInt(stockQuantity.toString()),
+            maxOrderableQuantity: maxOrderableQuantity ? parseInt(String(maxOrderableQuantity)) : null,
+            starRating: parseInt(starRating.toString()),
+            category,
+            subcategory,
+            tags,
+            status: status as "CONCEPT" | "ACTIEF" | "NIET_BESCHIKBAAR" | "VERVALLEN",
+            isActive,
+          },
         });
 
-        console.log("✅ Images succesvol opgeslagen:", imageData.length);
-      }
+        console.log("✅ Product succesvol aangemaakt:", nieuwProduct);
 
-      // ✅ 7. CACHE REFRESH & REDIRECT
-      console.log("🔄 Cache refresh en redirect...");
-      revalidatePath("/admin/products");
-      redirect("/admin/products");
+        // ✅ 6. IMAGES OPSLAAN
+        if (images && images.length > 0) {
+          console.log("📸 Start image opslag...");
+          console.log("🔍 Images om op te slaan:", images);
+
+          const imageData = images.map((imageUrl, index) => ({
+            productId: nieuwProduct.id,
+            url: imageUrl,
+            isMain: index === 0, // First image is main
+            order: index,
+          }));
+
+          await prisma.productImage.createMany({
+            data: imageData,
+          });
+
+          console.log("✅ Images succesvol opgeslagen:", imageData.length);
+        }
+
+        // ✅ 7. CACHE REFRESH & REDIRECT
+        console.log("🔄 Cache refresh en redirect...");
+        revalidatePath("/admin/products");
+        redirect("/admin/products");
+      } catch (error) {
+        console.error("❌ Fout bij aanmaken product:", error);
+        console.error("📋 Stack trace:", error instanceof Error ? error.stack : "Geen stack trace beschikbaar");
+        console.error("🔍 Error details:", {
+          name: error instanceof Error ? error.name : "Unknown",
+          message: error instanceof Error ? error.message : "Unknown error",
+          digest: (error as any)?.digest,
+          code: (error as any)?.code,
+        });
+        throw new Error(
+          ((error as Record<string, unknown>)?.message as string) ??
+            "Onbekende fout bij productaanmaak",
+        );
+      }
     } catch (error: unknown) {
       if ((error as Record<string, unknown>)?.digest?.toString().startsWith("NEXT_REDIRECT")) {
         // Redirect is succesvol, geen error
@@ -209,12 +223,12 @@ export async function createProduct(formData: FormData) {
   } catch (error: unknown) {
     // Outer catch voor onverwachte fouten
     console.error("🛑 Onverwachte fout in createProduct:", error);
-    console.error("📋 Stack trace:", error?.stack || "Geen stack trace beschikbaar");
+    console.error("📋 Stack trace:", error instanceof Error ? error.stack : "Geen stack trace beschikbaar");
     console.error("🔍 Error details:", {
-      name: error?.name,
-      message: error?.message,
-      digest: error?.digest,
-      code: error?.code,
+      name: error instanceof Error ? error.name : "Unknown",
+      message: error instanceof Error ? error.message : "Unknown error",
+      digest: (error as any)?.digest,
+      code: (error as any)?.code,
     });
 
     // Re-throw voor client handling

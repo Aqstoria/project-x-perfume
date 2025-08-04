@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 // Mock Prisma

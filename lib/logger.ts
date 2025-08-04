@@ -16,8 +16,6 @@ export interface LogContext {
 }
 
 class Logger {
-  private isDevelopment = process.env.NODE_ENV === "development";
-  private isProduction = process.env.NODE_ENV === "production";
 
   private formatMessage(level: string, message: string, context?: LogContext): string {
     const timestamp = new Date().toISOString();
@@ -51,33 +49,22 @@ class Logger {
   }
 
   // Specialized logging methods
-  logUserAction(
-    userId: string,
-    action: string,
-    entity?: string,
-    entityId?: string,
-    details?: Record<string, unknown>,
-  ) {
+  logUserAction(userId: string, action: string, entity?: string, entityId?: string, details?: Record<string, unknown>) {
     this.info(`User action: ${action}`, {
       userId,
       action,
-      entity,
-      entityId,
-      details,
+      entity: entity || "unknown",
+      entityId: entityId || "unknown",
+      details: details || null,
     });
   }
 
-  logOrderEvent(
-    orderId: string,
-    event: string,
-    userId?: string,
-    details?: Record<string, unknown>,
-  ) {
+  logOrderEvent(orderId: string, event: string, userId?: string, details?: Record<string, unknown>) {
     this.info(`Order event: ${event}`, {
       orderId,
       event,
-      userId,
-      details,
+      userId: userId || "unknown",
+      details: details || null,
     });
   }
 
@@ -89,21 +76,12 @@ class Logger {
     });
   }
 
-  logSecurityEvent(
-    event: string,
-    request: Request,
-    details?: Record<string, unknown>,
-    severity: "low" | "medium" | "high" = "medium",
-  ) {
-    const level = severity === "high" ? "error" : severity === "medium" ? "warn" : "info";
-    this[level](`Security event: ${event}`, {
-      event,
-      url: request.url,
-      method: request.method,
-      userAgent: request.headers.get("user-agent"),
-      ip: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"),
-      details,
-    });
+  logSecurityEvent(event: string, error: Error) {
+    const errorInfo = new Error(`Security event: ${event} - ${error.message}`);
+    if (error.stack) {
+      errorInfo.stack = error.stack;
+    }
+    this.error(errorInfo.message);
   }
 
   logDatabaseQuery(query: string, duration: number, success: boolean) {
@@ -125,12 +103,20 @@ class Logger {
   // Performance monitoring
   logPerformance(operation: string, duration: number, context?: LogContext) {
     if (duration > 5000) {
-      this.error(`Slow operation: ${operation} took ${duration}ms`, undefined, context);
+      this.error(`Slow operation: ${operation} took ${duration}ms`, undefined);
     } else if (duration > 1000) {
-      this.warn(`Slow operation: ${operation} took ${duration}ms`, undefined, context);
+      this.warn(`Slow operation: ${operation} took ${duration}ms`);
     } else {
       this.debug(`Operation: ${operation} took ${duration}ms`, context);
     }
+  }
+
+  logSlowOperation(operation: string, duration: number, context?: Record<string, unknown>) {
+    this.warn(`Slow operation: ${operation} took ${duration}ms`, {
+      operation,
+      duration,
+      ...context,
+    });
   }
 }
 

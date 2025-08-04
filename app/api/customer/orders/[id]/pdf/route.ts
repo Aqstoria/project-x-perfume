@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PDFDocument from "pdfkit";
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   try {
     const session = await auth();
@@ -58,15 +58,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const response = new NextResponse(
       new ReadableStream({
         start(controller) {
-          doc.pipe({
-            write(chunk: Uint8Array) {
-              controller.enqueue(chunk);
-            },
-            end() {
-              controller.close();
-            },
+          const chunks: Uint8Array[] = [];
+          doc.on('data', (chunk) => {
+            chunks.push(chunk);
+            controller.enqueue(chunk);
           });
-        },
+          doc.on('end', () => {
+            controller.close();
+          });
+          doc.end();
+        }
       }),
       {
         headers: {
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-function generateInvoicePDF(doc: Record<string, unknown>, order: Record<string, unknown>) {
+function generateInvoicePDF(doc: any, order: any) {
   const { customer, orderItems, createdAt, status } = order;
 
   // Header
@@ -156,7 +157,7 @@ function generateInvoicePDF(doc: Record<string, unknown>, order: Record<string, 
   let currentY = tableTop + 20;
   let subtotal = 0;
 
-  orderItems.forEach((item: Record<string, unknown>) => {
+  orderItems.forEach((item: any) => {
     const itemTotal = item.quantity * Number(item.price);
     subtotal += itemTotal;
 

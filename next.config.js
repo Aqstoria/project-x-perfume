@@ -6,6 +6,7 @@ if (process.env.NODE_ENV === "production") {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone", // ✅ Essentieel voor Vercel + App Router
+  serverExternalPackages: ["@prisma/client"],
   // Add security headers
   async headers() {
     return [

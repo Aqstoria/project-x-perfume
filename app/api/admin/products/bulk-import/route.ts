@@ -12,24 +12,7 @@ interface ImportResult {
   field?: string;
 }
 
-interface ProductRow {
-  name: string;
-  brand: string;
-  content: string;
-  ean: string;
-  purchasePrice: number;
-  retailPrice: number;
-  stockQuantity: number;
-  maxOrderableQuantity: number;
-  starRating: number;
-  category: string;
-  subcategory: string;
-  description?: string;
-  tags?: string;
-  status: string;
-}
-
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Check authentication
     const session = await auth();
@@ -37,7 +20,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const formData = await request.formData();
+    const formData = await _request.formData();
     const file = formData.get("file") as File;
 
     if (!file) {
@@ -70,12 +53,36 @@ export async function POST(request: NextRequest) {
       if (file.type === "text/csv") {
         const workbook = XLSX.read(buffer, { type: "buffer" });
         const sheetName = workbook.SheetNames[0];
+        if (!sheetName) {
+          return NextResponse.json(
+            { error: "No sheet found in the uploaded file." },
+            { status: 400 }
+          );
+        }
         const worksheet = workbook.Sheets[sheetName];
+        if (!worksheet) {
+          return NextResponse.json(
+            { error: "No worksheet found in the uploaded file." },
+            { status: 400 }
+          );
+        }
         rows = XLSX.utils.sheet_to_json(worksheet);
       } else {
         const workbook = XLSX.read(buffer, { type: "buffer" });
         const sheetName = workbook.SheetNames[0];
+        if (!sheetName) {
+          return NextResponse.json(
+            { error: "No sheet found in the uploaded file." },
+            { status: 400 }
+          );
+        }
         const worksheet = workbook.Sheets[sheetName];
+        if (!worksheet) {
+          return NextResponse.json(
+            { error: "No worksheet found in the uploaded file." },
+            { status: 400 }
+          );
+        }
         rows = XLSX.utils.sheet_to_json(worksheet);
       }
     } catch (error) {
@@ -149,7 +156,7 @@ export async function POST(request: NextRequest) {
         const tags = row.tags ? row.tags.split(",").map((tag: string) => tag.trim()) : [];
 
         // Create product
-        const product = await prisma.product.create({
+        await prisma.product.create({
           data: {
             name: row.name,
             brand: row.brand,

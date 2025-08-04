@@ -16,7 +16,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-import { PWAInstallPrompt } from "@/components/ui/PWAInstallPrompt";
+import PWAInstallPrompt from "@/components/ui/PWAInstallPrompt";
 import { OfflineAlert } from "@/components/ui/OfflineIndicator";
 import { NotificationCenter } from "@/components/ui/NotificationCenter";
 

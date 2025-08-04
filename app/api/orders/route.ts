@@ -18,7 +18,7 @@ const createOrderSchema = z.object({
   customerId: z.string().min(1),
 });
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Check authentication
     const session = await auth();
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await _request.json();
     const { items, notes, customerId } = createOrderSchema.parse(body);
 
     // Validate order
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     const order = await prisma.order.create({
       data: {
         customerId,
-        userId: (session.user as Record<string, unknown>).id as string,
+        userId: (session.user as any).id as string,
         status: "PENDING",
         totalAmount: orderPricing.totalAmount,
         notes: notes || null,
@@ -109,14 +109,14 @@ export async function POST(request: NextRequest) {
 }
 
 // Get orders for the authenticated user
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(_request.url);
     const status = searchParams.get("status");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const where: Record<string, unknown> = {
-      userId: (session.user as Record<string, unknown>).id as string,
+      userId: (session.user as any).id as string,
     };
 
     if (status) {

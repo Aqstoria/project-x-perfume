@@ -24,13 +24,13 @@ export default function Home() {
               <h2 className="text-2xl font-semibold text-gray-800 mb-4">Welkom terug!</h2>
               <div className="text-left space-y-2 text-gray-600">
                 <p>
-                  <strong>Username:</strong> {session.user?.username}
+                  <strong>Username:</strong> {(session.user as any)?.username}
                 </p>
                 <p>
-                  <strong>Role:</strong> {session.user?.role}
+                  <strong>Role:</strong> {(session.user as any)?.role}
                 </p>
                 <p>
-                  <strong>User ID:</strong> {session.user?.id}
+                  <strong>User ID:</strong> {(session.user as any)?.id}
                 </p>
               </div>
               <div className="mt-4 flex gap-2">

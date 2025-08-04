@@ -18,7 +18,7 @@ export default function BuyerDashboardPage() {
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login/buyer");
-    } else if (status === "authenticated" && session?.user?.role !== "BUYER") {
+    } else if (status === "authenticated" && (session?.user as any)?.role !== "BUYER") {
       router.push("/login/buyer");
     }
   }, [status, session, router]);
@@ -31,7 +31,7 @@ export default function BuyerDashboardPage() {
     );
   }
 
-  if (!session || session.user?.role !== "BUYER") {
+  if (!session || (session.user as any)?.role !== "BUYER") {
     return null;
   }
 
@@ -51,7 +51,7 @@ export default function BuyerDashboardPage() {
               </div>
               <div className="bg-white p-6 rounded-lg shadow">
                 <h3 className="text-lg font-semibold mb-4">Pricing Summary</h3>
-                <PricingSummary customerId={session.user.customerId || ""} />
+                <PricingSummary customerId={(session.user as any)?.customerId || ""} />
               </div>
             </div>
           </div>
@@ -61,9 +61,9 @@ export default function BuyerDashboardPage() {
       case "reviews":
         return <ReviewManagement />;
       case "pricing":
-        return <PricingSummary customerId={session.user.customerId || ""} />;
+        return <PricingSummary customerId={(session.user as any)?.customerId || ""} />;
       case "notifications":
-        return <NotificationCenter customerId={session.user.customerId || ""} />;
+        return <NotificationCenter customerId={(session.user as any)?.customerId || ""} />;
       case "downloads":
         return <Downloads />;
       default:

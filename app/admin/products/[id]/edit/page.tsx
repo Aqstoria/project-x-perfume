@@ -74,7 +74,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       router.push("/login/admin");
     } else if (
       status === "authenticated" &&
-      session?.user?.role !== "ADMIN"
+      (session?.user as any)?.role !== "ADMIN"
     ) {
       router.push("/login/admin");
     }
@@ -127,7 +127,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     );
   }
 
-  if (!session || session.user?.role !== "ADMIN") {
+  if (!session || (session.user as any)?.role !== "ADMIN") {
     return null;
   }
 

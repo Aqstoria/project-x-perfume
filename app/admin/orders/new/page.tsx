@@ -39,7 +39,7 @@ export default function NewOrderPage() {
       router.push("/login/admin");
     } else if (
       status === "authenticated" &&
-      session?.user?.role !== "ADMIN"
+      (session?.user as any)?.role !== "ADMIN"
     ) {
       router.push("/login/admin");
     }
@@ -53,7 +53,7 @@ export default function NewOrderPage() {
     );
   }
 
-  if (!session || session.user?.role !== "ADMIN") {
+  if (!session || (session.user as any)?.role !== "ADMIN") {
     return null;
   }
 
@@ -117,7 +117,7 @@ export default function NewOrderPage() {
             <h1 className="text-3xl font-bold text-gray-900">Nieuwe Order</h1>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                Welkom, {session.user?.username}
+                Welkom, {(session.user as any)?.username}
               </span>
             </div>
           </div>

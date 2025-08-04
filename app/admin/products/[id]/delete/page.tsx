@@ -33,7 +33,7 @@ export default function ProductDeletePage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     if (status === "loading") return;
 
-    if (!session || session.user?.role !== "ADMIN") {
+    if (!session || (session.user as any)?.role !== "ADMIN") {
       router.push("/login/admin");
       return;
     }

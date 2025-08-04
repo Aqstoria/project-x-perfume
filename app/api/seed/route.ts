@@ -7,13 +7,14 @@ const prisma = new PrismaClient();
 export async function POST(_request: NextRequest) {
   console.log(" Starting database seeding...");
   console.log(" DATABASE_URL:", process.env.DATABASE_URL ? "Set" : "Not set");
+  
   try {
     // Check if users already exist
     const existingUsers = await prisma.user.findMany();
     if (existingUsers.length > 0) {
-      return NextResponse.json({ 
-        message: "Database already seeded", 
-        users: existingUsers.length 
+      return NextResponse.json({
+        message: "Database already seeded",
+        users: existingUsers.length
       });
     }
 
@@ -63,13 +64,13 @@ export async function POST(_request: NextRequest) {
   } catch (error) {
     console.error(" Seeding error:", error);
     console.error(" Error details:", error instanceof Error ? error.message : "Unknown error");
-    console.error(" Error stack:", error instanceof Error ? error.stack : "No stack trace");
-    console.error(" Database status check error:", error);
-    console.error(" Error details:", error instanceof Error ? error.message : "Unknown error");
-    console.error(" Error stack:", error instanceof Error ? error.stack : "No stack trace");
-    console.error("Seeding error:", error);
+    
     return NextResponse.json(
-      { error: "Failed to seed database", details: error instanceof Error ? error.message : "Unknown error" },
+      { 
+        error: "Failed to seed database", 
+        details: error instanceof Error ? error.message : "Unknown error",
+        databaseUrl: process.env.DATABASE_URL ? "Set" : "Not set"
+      },
       { status: 500 }
     );
   } finally {
@@ -80,6 +81,7 @@ export async function POST(_request: NextRequest) {
 export async function GET() {
   console.log(" Checking database status...");
   console.log(" DATABASE_URL:", process.env.DATABASE_URL ? "Set" : "Not set");
+  
   try {
     const userCount = await prisma.user.count();
     const customerCount = await prisma.customer.count();
@@ -93,30 +95,18 @@ export async function GET() {
       isSeeded: userCount > 0
     });
   } catch (error) {
-    console.error(" Seeding error:", error);
-    console.error(" Error details:", error instanceof Error ? error.message : "Unknown error");
-    console.error(" Error stack:", error instanceof Error ? error.stack : "No stack trace");
     console.error(" Database status check error:", error);
     console.error(" Error details:", error instanceof Error ? error.message : "Unknown error");
-    console.error(" Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    
     return NextResponse.json(
-      { error: "Failed to check database status" },
+      { 
+        error: "Failed to check database status", 
+        details: error instanceof Error ? error.message : "Unknown error",
+        databaseUrl: process.env.DATABASE_URL ? "Set" : "Not set"
+      },
       { status: 500 }
     );
   } finally {
     await prisma.$disconnect();
-  }
-}
-
-
-// Add this at the top of the file after imports
-async function testDatabaseConnection() {
-  try {
-    const result = await prisma.$queryRaw`SELECT 1 as test`;
-    console.log(" Database connection test successful:", result);
-    return true;
-  } catch (error) {
-    console.error(" Database connection test failed:", error);
-    return false;
   }
 }

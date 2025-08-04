@@ -5,6 +5,8 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 export async function POST(_request: NextRequest) {
+  console.log(" Starting database seeding...");
+  console.log(" DATABASE_URL:", process.env.DATABASE_URL ? "Set" : "Not set");
   try {
     // Check if users already exist
     const existingUsers = await prisma.user.findMany();
@@ -59,6 +61,12 @@ export async function POST(_request: NextRequest) {
     });
 
   } catch (error) {
+    console.error(" Seeding error:", error);
+    console.error(" Error details:", error instanceof Error ? error.message : "Unknown error");
+    console.error(" Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    console.error(" Database status check error:", error);
+    console.error(" Error details:", error instanceof Error ? error.message : "Unknown error");
+    console.error(" Error stack:", error instanceof Error ? error.stack : "No stack trace");
     console.error("Seeding error:", error);
     return NextResponse.json(
       { error: "Failed to seed database", details: error instanceof Error ? error.message : "Unknown error" },
@@ -70,6 +78,8 @@ export async function POST(_request: NextRequest) {
 }
 
 export async function GET() {
+  console.log(" Checking database status...");
+  console.log(" DATABASE_URL:", process.env.DATABASE_URL ? "Set" : "Not set");
   try {
     const userCount = await prisma.user.count();
     const customerCount = await prisma.customer.count();
@@ -83,6 +93,12 @@ export async function GET() {
       isSeeded: userCount > 0
     });
   } catch (error) {
+    console.error(" Seeding error:", error);
+    console.error(" Error details:", error instanceof Error ? error.message : "Unknown error");
+    console.error(" Error stack:", error instanceof Error ? error.stack : "No stack trace");
+    console.error(" Database status check error:", error);
+    console.error(" Error details:", error instanceof Error ? error.message : "Unknown error");
+    console.error(" Error stack:", error instanceof Error ? error.stack : "No stack trace");
     return NextResponse.json(
       { error: "Failed to check database status" },
       { status: 500 }
